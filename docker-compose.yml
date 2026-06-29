@@ -1,0 +1,19 @@
+# Slim control-plane backend: MLflow only (tracking + Prompt Registry from iter 1).
+# Host processes talk to it over localhost:5050 HTTP — NO shared filesystem (rule: --serve-artifacts
+# so clients fetch artifacts via HTTP, avoiding host/container path-mismatch). Containers never
+# reach OpenAI; LLM egress is host-only (tech-decisions: execution boundary).
+# Host port is 5050, not 5000: macOS ControlCenter (AirPlay Receiver) squats on 5000.
+services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v3.1.1
+    ports:
+      - "5050:5000"
+    volumes:
+      - ./mlflow-data:/mlflow
+    command: >
+      mlflow server
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --artifacts-destination /mlflow/artifacts
+      --serve-artifacts
+      --host 0.0.0.0
+      --port 5000

@@ -1,0 +1,10 @@
+# Tier -> model mapping. The ONLY place model names live; layers call route("tier", ...)
+# and never name a model (CLAUDE.md rule 4). Switching nano->mid is one env line (TRIAGE_TIER).
+#
+# Pin-gate (mechanically checked): every model MUST be a dated snapshot matching -YYYY-MM-DD$,
+# never a floating alias — the cloud silently drifts otherwise, which is ironic harm for a
+# project *about* drift. Pinning buys reproducibility.
+tiers:
+  cheap: gpt-4.1-nano-2025-04-14   # champion default — cheapest ($0.10/$0.40 per 1M)
+  mid: gpt-4o-mini-2024-07-18      # light step up if nano underdelivers
+  smart: gpt-4.1-2025-04-14        # challenger + LLM-as-judge
