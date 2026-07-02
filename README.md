@@ -5,14 +5,18 @@ support tickets for a fictional SaaS (*Driftwood*). The app is a fixture; **the 
 product** — prompt registry, CI eval-gates, online evaluation, drift monitoring, and a
 continuous-evaluation loop. See `CLAUDE.md` (constitution) and `ROADMAP.md` (iteration backbone).
 
-## Quickstart (iter 0 — scaffold)
+## Quickstart (through iter 1 — prompt registry)
 
 ```bash
 uv sync --extra dev
 cp .env.example .env            # defaults are fine for offline use
 make up                         # control-plane backend (MLflow) at localhost:5050
 
-# Triage one ticket — replay mode is offline and $0 (default).
+# Register the triage prompt as a versioned artifact with champion/challenger aliases.
+# Talks to the registry only — no LLM call, costs nothing.
+uv run python -m scripts.register_prompt
+
+# Triage one ticket — loads the champion prompt by alias; LLM is offline/$0 in replay (default).
 uv run python -m app.cli.main DW-001
 
 make check                      # ruff + format + mypy + pytest (static gate, no LLM)

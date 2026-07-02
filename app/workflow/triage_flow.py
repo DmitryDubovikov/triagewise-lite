@@ -1,34 +1,33 @@
-"""Triage orchestration: ticket -> route() -> parsed TriageResult.
+"""Triage orchestration: load prompt by alias -> route() -> parsed TriageResult.
 
-The prompt lives here inline for now; in iter 1 it becomes a versioned MLflow Prompt Registry
-artifact loaded at the boundary. Domain stays pure (schema/parse); persistence reads fixtures.
+The prompt is no longer inline — it's a versioned MLflow Prompt Registry artifact loaded by
+alias (iter 1). The registry handle is opened at the transport boundary and passed in (seam
+option A, CLAUDE.md rule 6): the workflow loads + formats the prompt, then calls route(), which
+stays a pure tier->model->cassette chokepoint and never imports the registry. Domain stays pure.
 """
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from app.config import Settings
 from app.domain.triage import Ticket, TriageResult, parse_triage
-from app.llm.cassettes import Messages
 from app.llm.router import route
+from app.persistence.prompts import CHAMPION, format_for_ticket, load_triage_prompt
 
-_SYSTEM = (
-    "You triage Driftwood (a SaaS task-tracker) support tickets. "
-    "Reply with ONLY a JSON object with keys: "
-    "category (string), priority (low|medium|high|urgent), "
-    "sentiment (negative|neutral|positive), needs_human (boolean), "
-    "draft_reply (string). No prose, no code fences."
-)
-
-
-def build_messages(ticket: Ticket) -> Messages:
-    return [
-        {"role": "system", "content": _SYSTEM},
-        {"role": "user", "content": f"Subject: {ticket.subject}\n\n{ticket.body}"},
-    ]
+if TYPE_CHECKING:
+    from mlflow import MlflowClient
 
 
 async def triage_ticket(
-    ticket: Ticket, *, tier: str, settings: Settings | None = None
+    ticket: Ticket,
+    *,
+    tier: str,
+    client: MlflowClient,
+    alias: str = CHAMPION,
+    settings: Settings | None = None,
 ) -> TriageResult:
-    content = await route(tier, build_messages(ticket), settings=settings)
+    prompt = load_triage_prompt(client, alias)
+    messages = format_for_ticket(prompt, ticket)
+    content = await route(tier, messages, settings=settings)
     return parse_triage(content)

@@ -9,6 +9,9 @@ dependencies = [
     "pyyaml>=6,<7",
     # LiteLLM: SDK-only, never Proxy (CLAUDE.md rule 5). Exact pin lives in uv.lock.
     "litellm>=1.55,<2",
+    # MLflow Prompt Registry (iter 1). Full mlflow, not skinny: the sqlite registry store backs
+    # offline tests. A uv-env dep, not a host runtime (tech-decisions: not clutter). Pin in uv.lock.
+    "mlflow>=3.1,<4",
 ]
 
 [project.optional-dependencies]
@@ -36,3 +39,8 @@ select = ["E", "F", "I", "UP", "B"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[[tool.mypy.overrides]]
+# mlflow ships no usable type stubs; the prompt-registry surface is exercised via tests.
+module = "mlflow.*"
+ignore_missing_imports = true

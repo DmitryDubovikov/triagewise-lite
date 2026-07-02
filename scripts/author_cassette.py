@@ -1,8 +1,10 @@
-"""Author a replay cassette OFFLINE — no network, $0.
+"""Author a replay cassette OFFLINE — no network, no LLM, $0.
 
-The replay smoke needs a committed cassette but we don't spend money to get one in iter 0.
-This fabricates a *format-valid* triage response (existence-gate, not accuracy) and writes it
-through the same cassette_key() the router uses, so router replay finds it.
+The replay smoke needs a committed cassette but we don't spend money to get one. This fabricates
+a *format-valid* triage response (existence-gate, not accuracy) and writes it through the same
+cassette_key() the router uses. Messages come from the champion prompt via the registry +
+pv.format() — the exact path triage_ticket takes — so the key can't drift from the real flow.
+The registry here is a throwaway sqlite db (offline), synced from the same sync_prompts().
 
     python -m scripts.author_cassette DW-001 cheap
 
@@ -14,12 +16,20 @@ from __future__ import annotations
 
 import json
 import sys
+import tempfile
+from pathlib import Path
 
 from app.config import get_settings
 from app.llm.cassettes import cassette_key, save
 from app.llm.tiers import resolve_model
+from app.persistence.prompts import (
+    CHAMPION,
+    format_for_ticket,
+    load_triage_prompt,
+    open_registry,
+    sync_prompts,
+)
 from app.persistence.tickets import get_ticket, load_tickets
-from app.workflow.triage_flow import build_messages
 
 # Hand-authored, format-valid triage replies keyed by ticket id.
 _FIXTURE_REPLIES: dict[str, dict] = {
@@ -53,10 +63,18 @@ def main(argv: list[str]) -> int:
     if ticket is None:
         print(f"No ticket with id '{ticket_id}' in fixture", file=sys.stderr)
         return 1
-    messages = build_messages(ticket)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        offline = settings.model_copy(
+            update={"mlflow_tracking_uri": f"sqlite:///{Path(tmp) / 'reg.db'}"}
+        )
+        client = open_registry(offline)
+        sync_prompts(client)
+        prompt = load_triage_prompt(client, CHAMPION)
+        messages = format_for_ticket(prompt, ticket)
+
     model = resolve_model(tier)
     key = cassette_key(model, messages)
-
     reply = _FIXTURE_REPLIES[ticket_id]
     save(settings.cassettes_dir, key, model, messages, {"content": json.dumps(reply)})
     print(f"Wrote cassette for {ticket_id} ({tier} -> {model}): {key}.json")

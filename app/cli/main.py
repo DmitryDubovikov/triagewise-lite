@@ -2,8 +2,10 @@
 
     python -m app.cli.main [TICKET_ID]
 
-Triages one ticket (the first, or the given id) at the configured TRIAGE_TIER. In the default
-replay mode this is offline and $0.
+Triages one ticket (the first, or the given id) at the configured TRIAGE_TIER, using the
+champion prompt from the registry. The LLM call is offline/$0 in the default replay mode, but
+the prompt now lives in MLflow (iter 1), so this needs the registry reachable (`make up` +
+`python -m scripts.register_prompt`).
 """
 
 from __future__ import annotations
@@ -12,6 +14,7 @@ import asyncio
 import sys
 
 from app.config import get_settings
+from app.persistence.prompts import open_registry
 from app.persistence.tickets import get_ticket, load_tickets
 from app.workflow.triage_flow import triage_ticket
 
@@ -31,7 +34,10 @@ def main(argv: list[str] | None = None) -> int:
         print(msg, file=sys.stderr)
         return 1
 
-    result = asyncio.run(triage_ticket(ticket, tier=settings.triage_tier, settings=settings))
+    client = open_registry(settings)
+    result = asyncio.run(
+        triage_ticket(ticket, tier=settings.triage_tier, client=client, settings=settings)
+    )
     print(f"[{ticket.id}] {settings.triage_tier} ({settings.llm_mode})")
     print(result.model_dump_json(indent=2))
     return 0

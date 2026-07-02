@@ -11,3 +11,6 @@ __pycache__/
 
 # MLflow / Docker local state (mounted volumes)
 mlflow-data/
+# Stray local sqlite if a client ever runs against the default URI instead of Settings.
+/mlflow.db
+/mlruns/
