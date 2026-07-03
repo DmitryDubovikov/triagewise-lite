@@ -6,6 +6,14 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+# Node (promptfoo is project-local, pinned by package-lock.json)
+node_modules/
+# promptfoo local state: run outputs and the record-only cache. The committed replay
+# artifact is eval/outputs.json; these are not it.
+eval/.results.json
+eval/.record-results.json
+eval/.promptfoo-cache/
+
 # Env / secrets
 .env
 

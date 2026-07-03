@@ -29,6 +29,24 @@ class TriageResult(BaseModel):
     draft_reply: str
 
 
+class GoldenLabels(BaseModel):
+    """Expected labels for one golden-set ticket — TriageResult minus draft_reply (free text
+    has no reference answer). Fixture metadata, not new output fields (rule 3 intact)."""
+
+    category: str
+    priority: Priority
+    sentiment: Sentiment
+    needs_human: bool
+
+
+class GoldenTicket(Ticket):
+    """A labeled golden-set ticket. `joker` marks the deliberately tricky ones (ambiguous
+    category / hidden negative / needs_human edge) that give future gates something to catch."""
+
+    expected: GoldenLabels
+    joker: str | None = None
+
+
 def parse_triage(content: str) -> TriageResult:
     """Parse the LLM's JSON text into a validated TriageResult.
 

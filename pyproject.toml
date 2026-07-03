@@ -20,6 +20,7 @@ dev = [
     "pytest>=8",
     "mypy>=1.10",
     "types-PyYAML",
+    "dvc>=3,<4",
 ]
 
 [build-system]

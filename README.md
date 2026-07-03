@@ -5,7 +5,7 @@ support tickets for a fictional SaaS (*Driftwood*). The app is a fixture; **the 
 product** — prompt registry, CI eval-gates, online evaluation, drift monitoring, and a
 continuous-evaluation loop. See `CLAUDE.md` (constitution) and `ROADMAP.md` (iteration backbone).
 
-## Quickstart (through iter 1 — prompt registry)
+## Quickstart (through iter 2 — CI eval-gate)
 
 ```bash
 uv sync --extra dev
@@ -19,11 +19,21 @@ uv run python -m scripts.register_prompt
 # Triage one ticket — loads the champion prompt by alias; LLM is offline/$0 in replay (default).
 uv run python -m app.cli.main DW-001
 
+# The CI eval gate (iter 2): promptfoo replays recorded outputs over the golden set — $0, no key.
+nvm use                         # Node version pinned in .nvmrc (promptfoo needs >=22.22)
+npm ci                          # project-local promptfoo, pinned by package-lock.json
+make eval                       # red if the prompt regressed / outputs weren't re-recorded
+
 make check                      # ruff + format + mypy + pytest (static gate, no LLM)
 make down                       # stop MLflow
 ```
 
-Make targets: `make check` (lint+types+tests), `make up`/`make down` (MLflow), `make test`, `make fmt`.
+Make targets: `make check` (lint+types+tests), `make up`/`make down` (MLflow), `make test`, `make fmt`,
+`make eval` (CI eval gate, offline replay), `make eval-build` (regenerate `eval/` assets from the
+DVC-versioned golden set), `make eval-record` (⚠️ live, costs money — re-records `eval/outputs.json`).
+
+The golden set (`data/golden.jsonl`, 40 labeled tickets) is DVC-versioned: `uv run dvc pull`
+restores it from the local dir remote (`../triagewise-lite-dvc-remote`).
 
 `LLM_MODE` is `replay` by default (reads committed cassettes, never the network).
 `record`/`live` hit OpenAI and cost money — gated by an explicit go (CLAUDE.md rule 4).

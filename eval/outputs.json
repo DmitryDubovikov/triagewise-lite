@@ -1,0 +1,166 @@
+{
+  "_generated": "by scripts/extract_eval_outputs.py (make eval-record) — do not edit; the committed replay artifact for the CI eval gate",
+  "model": "openai:chat:gpt-4.1-nano-2025-04-14",
+  "outputs": {
+    "051e43dac4f2de7b": {
+      "id": "GS-009",
+      "output": "{\"category\": \"Billing Issue\", \"priority\": \"high\", \"sentiment\": \"negative\", \"needs_human\": true, \"draft_reply\": \"Thank you for reaching out. I understand your concern about the prorated invoice amount. I will escalate this to our billing team to review the calculation and get back to you with a detailed explanation shortly.\"}"
+    },
+    "0a2b1878e328d7de": {
+      "id": "GS-010",
+      "output": "{\n  \"category\": \"Billing Issue\",\n  \"priority\": \"high\",\n  \"sentiment\": \"negative\",\n  \"needs_human\": true,\n  \"draft_reply\": \"Thank you for reaching out. We understand the inconvenience caused by the payment issues. Our support team will investigate this matter further and contact you shortly to resolve the problem.\"\n}"
+    },
+    "0f5600539d778add": {
+      "id": "GS-004",
+      "output": "{\"category\": \"Login Issues\", \"priority\": \"high\", \"sentiment\": \"negative\", \"needs_human\": true, \"draft_reply\": \"Thank you for reaching out. We understand how frustrating frequent logouts can be. Our team will investigate this issue promptly and get back to you with a solution.\"}"
+    },
+    "1c09f80697edfa14": {
+      "id": "GS-022",
+      "output": "{\"category\": \"Feature Request\", \"priority\": \"medium\", \"sentiment\": \"neutral\", \"needs_human\": false, \"draft_reply\": \"Hello,\\n\\nThank you for reaching out. Currently, moving a task between projects while preserving comment history isn't supported directly. You may consider duplicating the task and manually copying comments, or reaching out to our support team for assistance with this feature.\\n\\nBest regards,\\nDriftwood Support Team\"}"
+    },
+    "2996cf19ad74b52b": {
+      "id": "GS-019",
+      "output": "{\"category\": \"Feature Request\", \"priority\": \"medium\", \"sentiment\": \"positive\", \"needs_human\": true, \"draft_reply\": \"Thank you for your feedback and kind words! We appreciate your suggestion to enable creating tasks directly from Slack messages. Our team will review this feature request for future updates.\"}"
+    },
+    "37217f78d471a374": {
+      "id": "GS-034",
+      "output": "{\"category\": \"Export Issue\", \"priority\": \"high\", \"sentiment\": \"negative\", \"needs_human\": true, \"draft_reply\": \"Thank you for reporting this issue. It seems that exporting large boards may be causing performance problems. We will investigate this further and get back to you with a solution shortly.\"}"
+    },
+    "3b43b8a8d5aaf60a": {
+      "id": "GS-037",
+      "output": "{\n  \"category\": \"Export Issues\",\n  \"priority\": \"medium\",\n  \"sentiment\": \"negative\",\n  \"needs_human\": true,\n  \"draft_reply\": \"Hi, thank you for reaching out again. I apologize for the delay in response. I will escalate this issue to our technical team to investigate the export date formatting and get back to you as soon as possible. We appreciate your patience.\"\n}"
+    },
+    "3d2d8f7609a7e63e": {
+      "id": "GS-018",
+      "output": "{\"category\": \"Feature Request\", \"priority\": \"medium\", \"sentiment\": \"neutral\", \"needs_human\": true, \"draft_reply\": \"Thank you for your suggestion regarding a Gantt or timeline view. We appreciate your feedback and will consider it for future updates. If you have any additional details or specific requirements, please let us know.\"}"
+    },
+    "3f2aeb23fa14ce23": {
+      "id": "GS-028",
+      "output": "{\n  \"category\": \"Performance Issue\",\n  \"priority\": \"high\",\n  \"sentiment\": \"negative\",\n  \"needs_human\": true,\n  \"draft_reply\": \"Thank you for bringing this to our attention. We understand how important quick search results are. We are currently investigating the issue and will update you shortly. In the meantime, please let us know if you notice any other anomalies.\"\n}"
+    },
+    "4ad7532f8364ef26": {
+      "id": "GS-005",
+      "output": "{\"category\": \"Invitation Issue\", \"priority\": \"medium\", \"sentiment\": \"neutral\", \"needs_human\": false, \"draft_reply\": \"Hello,\\n\\nThank you for reaching out. The invite links are typically valid for 24 hours. Please try resending the invite, and if the issue persists, let us know so we can assist further.\\n\\nBest regards,\\nDriftwood Support Team\"}"
+    },
+    "4cd25d6b6b91ba1c": {
+      "id": "GS-031",
+      "output": "{\"category\": \"Performance Issue\", \"priority\": \"medium\", \"sentiment\": \"negative\", \"needs_human\": false, \"draft_reply\": \"Thank you for reporting the typing lag issue. We recommend trying to clear your browser cache and ensuring your browser is up to date. If the problem persists, please let us know so we can assist further.\"}"
+    },
+    "5088b9d39cbc829a": {
+      "id": "GS-032",
+      "output": "{\"category\": \"report generation issue\", \"priority\": \"high\", \"sentiment\": \"negative\", \"needs_human\": true, \"draft_reply\": \"Hello,\\n\\nThank you for reporting the timeout issue with the weekly report generation. We understand the importance of this report for your management team. Our technical team will investigate the cause of the timeout, especially for larger projects, and will update you shortly.\\n\\nBest regards,\\nSupport Team\"}"
+    },
+    "5bcedef01ae6bea9": {
+      "id": "GS-026",
+      "output": "{\"category\": \"access control\", \"priority\": \"medium\", \"sentiment\": \"neutral\", \"needs_human\": false, \"draft_reply\": \"Thank you for reaching out. You can set up read-only access for your client by inviting them as a guest with view-only permissions on the specific board. Please refer to our documentation on managing guest access for detailed instructions.\"}"
+    },
+    "5f643cbca991fa46": {
+      "id": "GS-040",
+      "output": "{\n  \"category\": \"Billing/Refund\",\n  \"priority\": \"urgent\",\n  \"sentiment\": \"negative\",\n  \"needs_human\": true,\n  \"draft_reply\": \"Dear Customer, we sincerely apologize for the inconvenience caused. We understand your frustration and would like to resolve this issue promptly. Please contact our support team directly so we can discuss your refund request and work towards a satisfactory solution.\"\n}"
+    },
+    "601bcc82ff827776": {
+      "id": "GS-029",
+      "output": "{\"category\": \"Mobile App Issue\", \"priority\": \"high\", \"sentiment\": \"negative\", \"needs_human\": true, \"draft_reply\": \"Thank you for bringing this to our attention. We understand how battery drain can be frustrating. Our team will investigate this issue further and get back to you with a solution shortly.\"}"
+    },
+    "60a66ac7d3713fb4": {
+      "id": "GS-016",
+      "output": "{\n  \"category\": \"Webhook Issue\",\n  \"priority\": \"high\",\n  \"sentiment\": \"negative\",\n  \"needs_human\": true,\n  \"draft_reply\": \"Thank you for reporting the webhook issue. We understand how critical this is for your workflow. Our team is investigating the problem and will update you shortly. Please hold on while we work to resolve this.\"\n}"
+    },
+    "646797f45d237ea2": {
+      "id": "GS-006",
+      "output": "{\n  \"category\": \"Billing Issue\",\n  \"priority\": \"high\",\n  \"sentiment\": \"negative\",\n  \"needs_human\": true,\n  \"draft_reply\": \"Thank you for bringing this to our attention. We apologize for the inconvenience. Our billing team will review your account and process a refund for the duplicate charge. We will follow up shortly with an update.\" \n}"
+    },
+    "6a00f55c88b6763d": {
+      "id": "GS-013",
+      "output": "{\"category\": \"Notification Issue\", \"priority\": \"high\", \"sentiment\": \"negative\", \"needs_human\": true, \"draft_reply\": \"Thank you for reporting the duplicate notifications. We understand how this can be disruptive. Our support team will investigate the issue and get back to you shortly.\"}"
+    },
+    "6e6b33bda4277ba5": {
+      "id": "GS-039",
+      "output": "{\n  \"category\": \"Account & Billing\",\n  \"priority\": \"high\",\n  \"sentiment\": \"neutral\",\n  \"needs_human\": true,\n  \"draft_reply\": \"Thank you for reaching out. I will escalate your request to our legal team to provide the necessary Data Processing Agreement and data residency confirmation. A support specialist will follow up with you shortly.\" \n}"
+    },
+    "6eab7ae6a040a415": {
+      "id": "GS-035",
+      "output": "{\"category\": \"Feature Request\", \"priority\": \"medium\", \"sentiment\": \"neutral\", \"needs_human\": false, \"draft_reply\": \"Hello,\\n\\nThank you for reaching out. Currently, Driftwood does not support recurring tasks directly. However, you can set up recurring reminders using integrations or third-party automation tools. If you'd like, I can provide more details or suggest alternative workflows.\\n\\nBest regards,\\nSupport Team\"}"
+    },
+    "7d22565107fe869c": {
+      "id": "GS-002",
+      "output": "{\"category\": \"Authentication Issue\", \"priority\": \"urgent\", \"sentiment\": \"negative\", \"needs_human\": true, \"draft_reply\": \"Thank you for reporting this issue. We understand the urgency and are investigating the Google SSO problem affecting your team. Our support team will update you shortly to resolve this as quickly as possible.\"}"
+    },
+    "801cf5856794a233": {
+      "id": "GS-036",
+      "output": "{\n  \"category\": \"Pricing Inquiry\",\n  \"priority\": \"medium\",\n  \"sentiment\": \"positive\",\n  \"needs_human\": true,\n  \"draft_reply\": \"Thank you for your kind words and for being a valued user of Driftwood! I understand your interest in annual pricing options. I will escalate this request to our sales team and get back to you with the available discounts and plans shortly.\"\n}"
+    },
+    "8bbd6493584436da": {
+      "id": "GS-025",
+      "output": "{\n  \"category\": \"Feature Request\",\n  \"priority\": \"medium\",\n  \"sentiment\": \"positive\",\n  \"needs_human\": false,\n  \"draft_reply\": \"Hi! You can find a list of all keyboard shortcuts in the help section of Driftwood under 'Keyboard Shortcuts'. If you need a quick reference, I can also send you a cheat sheet. Let me know!\"\n}"
+    },
+    "9526f79e2a36a734": {
+      "id": "GS-007",
+      "output": "{\"category\": \"Billing/Invoices\", \"priority\": \"medium\", \"sentiment\": \"neutral\", \"needs_human\": false, \"draft_reply\": \"Hello,\\n\\nThank you for reaching out. You can add your VAT ID in the billing section of your account settings. If you need further assistance, please let us know.\\n\\nBest regards,\\nDriftwood Support Team\"}"
+    },
+    "a1acefe5e502b0fb": {
+      "id": "GS-033",
+      "output": "{\n  \"category\": \"Billing Issue\",\n  \"priority\": \"high\",\n  \"sentiment\": \"negative\",\n  \"needs_human\": true,\n  \"draft_reply\": \"Thank you for reaching out. We're sorry for the inconvenience caused by the double charge. Our support team will investigate this issue and get back to you shortly to resolve the refund. Please hold on while we look into this.\"\n}"
+    },
+    "a2668875d864c6e3": {
+      "id": "GS-012",
+      "output": "{\"category\": \"File Upload Issue\", \"priority\": \"high\", \"sentiment\": \"negative\", \"needs_human\": true, \"draft_reply\": \"Thank you for reporting the issue with large attachments. We are investigating the problem and will update you shortly. In the meantime, please try compressing your files or splitting them into smaller parts.\"}"
+    },
+    "af46d4932e24e1b4": {
+      "id": "GS-011",
+      "output": "{\"category\": \"Export Issue\", \"priority\": \"high\", \"sentiment\": \"negative\", \"needs_human\": true, \"draft_reply\": \"Thank you for reporting the issue with the CSV export. We understand how important accurate data is for your weekly reports. Our technical team is investigating this problem and will update you as soon as possible. In the meantime, please let us know if you need any assistance.\"}"
+    },
+    "b4d634838769ee98": {
+      "id": "GS-027",
+      "output": "{\"category\": \"Performance Issue\", \"priority\": \"high\", \"sentiment\": \"negative\", \"needs_human\": true, \"draft_reply\": \"Thank you for reporting the performance issue. We understand how important smooth operation is. Our team will investigate the cause of the slow load times and stuttering. We may need additional details or access to optimize the board for large datasets. We appreciate your patience.\"}"
+    },
+    "c70c10391994ddbd": {
+      "id": "GS-014",
+      "output": "{\"category\": \"Data Loss\", \"priority\": \"high\", \"sentiment\": \"negative\", \"needs_human\": true, \"draft_reply\": \"Thank you for reaching out. I understand your concern about the missing archived project. Please hold on while I escalate this issue to our support team for further investigation.\"}"
+    },
+    "d0e254762cfd6681": {
+      "id": "GS-021",
+      "output": "{\"category\": \"Feature Request\", \"priority\": \"medium\", \"sentiment\": \"neutral\", \"needs_human\": false, \"draft_reply\": \"Thank you for your suggestion regarding offline mode. We appreciate your feedback and will consider it for future updates to improve your experience.\"}"
+    },
+    "d98bd51be60bf235": {
+      "id": "GS-030",
+      "output": "{\"category\": \"API Performance\", \"priority\": \"high\", \"sentiment\": \"negative\", \"needs_human\": true, \"draft_reply\": \"Thank you for reaching out. We understand the impact of slow API responses and rate limits on your nightly sync. Please contact our support team directly to explore optimized batching options and potential solutions tailored to your use case.\"}"
+    },
+    "dbcafa85ce6b4038": {
+      "id": "GS-017",
+      "output": "{\"category\": \"Feature Request\", \"priority\": \"medium\", \"sentiment\": \"positive\", \"needs_human\": false, \"draft_reply\": \"Thank you for your suggestion! We appreciate your feedback on adding native recurring tasks. We'll consider this for future updates.\"}"
+    },
+    "e30d3402ea4de1df": {
+      "id": "GS-015",
+      "output": "{\n  \"category\": \"UI/UX\",\n  \"priority\": \"medium\",\n  \"sentiment\": \"negative\",\n  \"needs_human\": true,\n  \"draft_reply\": \"Thank you for reporting the issue with the dark mode due-date picker. We understand how this impacts your experience and will escalate this to our development team for prompt resolution. We appreciate your patience as we work to fix this.\" \n}"
+    },
+    "e34c9661ea9fe5cf": {
+      "id": "GS-001",
+      "output": "{\"category\": \"Login Issues\", \"priority\": \"high\", \"sentiment\": \"negative\", \"needs_human\": true, \"draft_reply\": \"Hello, we're sorry to hear you're experiencing login issues after enabling 2FA. Please contact our support team directly so we can assist you in regaining access to your account securely.\"}"
+    },
+    "e7a9815a590a9628": {
+      "id": "GS-003",
+      "output": "{\"category\": \"Account Access\", \"priority\": \"high\", \"sentiment\": \"negative\", \"needs_human\": true, \"draft_reply\": \"Hello,\\n\\nThank you for reaching out. To assist you in recovering your account, please provide any additional details you can recall, such as your full name or associated company. We may need to verify your identity before sharing account information. Please contact our support team directly at support@driftwood.com for further assistance.\\n\\nBest regards,\\nDriftwood Support Team\"}"
+    },
+    "e9f8ca831436a202": {
+      "id": "GS-024",
+      "output": "{\"category\": \"Data Export\", \"priority\": \"high\", \"sentiment\": \"neutral\", \"needs_human\": true, \"draft_reply\": \"Hello, thank you for reaching out. For a full workspace export, please contact our support team directly as it requires special permissions. Let us know if you'd like assistance with this process.\"}"
+    },
+    "ead1ad344833d3f4": {
+      "id": "GS-020",
+      "output": "{\"category\": \"Feature Request\", \"priority\": \"medium\", \"sentiment\": \"neutral\", \"needs_human\": true, \"draft_reply\": \"Thank you for your suggestion regarding custom fields for tasks. We appreciate your feedback and will pass it along to our product team for consideration. If you have any additional details or specific requirements, please let us know.\"}"
+    },
+    "ecd6de710823b01c": {
+      "id": "GS-038",
+      "output": "{\n  \"category\": \"UI/UX\",\n  \"priority\": \"medium\",\n  \"sentiment\": \"positive\",\n  \"needs_human\": true,\n  \"draft_reply\": \"Thank you for your kind words about the update! We appreciate your feedback regarding the saved board filters resetting. Our team will look into this issue to improve your experience. Please let us know if there's anything else we can assist with.\"\n}"
+    },
+    "f2a783a5394ff4ae": {
+      "id": "GS-023",
+      "output": "{\"category\": \"Feature Request\", \"priority\": \"medium\", \"sentiment\": \"neutral\", \"needs_human\": false, \"draft_reply\": \"Hello,\\n\\nThank you for reaching out. To set WIP limits on your board columns, please navigate to your board settings and locate the WIP limit options for each column. If you need detailed steps or assistance, let us know!\\n\\nBest regards,\\nDriftwood Support Team\"}"
+    },
+    "fb5a49d4d6b07f52": {
+      "id": "GS-008",
+      "output": "{\n  \"category\": \"Billing and Subscription\",\n  \"priority\": \"medium\",\n  \"sentiment\": \"neutral\",\n  \"needs_human\": false,\n  \"draft_reply\": \"Thank you for reaching out. Downgrading to the free plan will retain your existing boards and history, but some Pro features will be disabled. Please let us know if you'd like assistance with the downgrade process or have further questions.\"\n}"
+    }
+  }
+}

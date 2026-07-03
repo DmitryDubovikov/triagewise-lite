@@ -1,0 +1,15 @@
+# Red-demo evidence (iter 2) — gate turns red on a harmful prompt change
+
+## 1. miss-red ($0, offline): prompt changed, no re-record -> replay misses
+[90m│[39m Can't log in after enabling 2FA        [90m│[39m I turned on two-factor authentication  [90m│[39m [ERROR] no recorded output (key        [90m│[39m
+[90m│[39m Google SSO stopped working for the     [90m│[39m Since this morning everyone in our     [90m│[39m [ERROR] no recorded output (key        [90m│[39m
+[90m│[39m Not sure which email my account is     [90m│[39m I have two work emails and I can't     [90m│[39m [ERROR] no recorded output (key        [90m│[39m
+exit=2 (make), promptfoo exit=100
+
+## 2. assert-red (live): re-recorded bad prompt -> format asserts fail
+corrupted system prompt: "Reply with a short, friendly sentence to the customer. Do not use JSON."
+sample output: I'm sorry you're experiencing this issue—please reach out to our support team...
+assert reason: Expected output to be valid JSON
+  0 passed (0%)
+  ✗ 40 failed (100%)
+exit=100

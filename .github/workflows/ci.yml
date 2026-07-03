@@ -1,0 +1,42 @@
+# CI = two gates. `check` is the classic static gate; `eval-gate` is the LLM regression
+# gate (iter 2): promptfoo replays the committed artifact eval/outputs.json via the
+# file-replay provider — no secrets, no network egress, $0 (rule 4: live runs never happen
+# in CI). A prompt change without locally re-recorded outputs (make eval-record), or
+# recorded outputs that break the TriageResult contract, turn it red.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --extra dev
+      # UV_NO_SYNC keeps `uv run` inside make from re-syncing without the dev extra.
+      - run: make check
+        env:
+          UV_NO_SYNC: "1"
+
+  eval-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          # .nvmrc is the single source of the Node version (promptfoo 0.121.x needs >=22.22).
+          node-version-file: .nvmrc
+          cache: npm
+      # promptfoo's node_modules tree is heavy; restoring it beats re-linking on every run.
+      - uses: actions/cache@v4
+        id: node-modules
+        with:
+          path: node_modules
+          key: node-modules-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - if: steps.node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+      - run: make eval

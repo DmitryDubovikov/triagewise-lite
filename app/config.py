@@ -33,6 +33,10 @@ class Settings(BaseSettings):
     tiers_path: Path = _ROOT / "llm-tiers.yaml"
     tickets_path: Path = _ROOT / "fixtures" / "tickets.jsonl"
     cassettes_dir: Path = _ROOT / "cassettes"
+    # Golden set is DVC-versioned (not in git); eval/ holds the committed promptfoo
+    # assets generated from it by scripts/build_eval.py.
+    golden_path: Path = _ROOT / "data" / "golden.jsonl"
+    eval_dir: Path = _ROOT / "eval"
     mlflow_tracking_uri: str = "http://localhost:5050"
 
 

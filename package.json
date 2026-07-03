@@ -1,0 +1,8 @@
+{
+  "name": "triagewise-lite",
+  "private": true,
+  "description": "promptfoo is project-local (tech-decisions: package.json + package-lock.json, the .venv/uv.lock analog). Exact pin — the eval gate must not drift under us.",
+  "devDependencies": {
+    "promptfoo": "0.121.17"
+  }
+}
