@@ -40,7 +40,7 @@ _SYSTEM = (
     "Reply with ONLY a JSON object with keys: "
     "category (string), priority (low|medium|high|urgent), "
     "sentiment (negative|neutral|positive), needs_human (boolean), "
-    "draft_reply (string). No prose, no code fences."
+    "draft_reply (string). Reply in friendly prose, no JSON."
 )
 
 # Chat templates with {{subject}}/{{body}} placeholders (MLflow double-brace form).
