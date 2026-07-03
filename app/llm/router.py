@@ -3,15 +3,23 @@
 Layers call route() and never name a model or import an SDK directly. Cassette mode decides
 whether we touch the network: replay is offline/$0 (default); record/live cost money (rule 4).
 
+Access layer (iter 3): every call is measured — latency + cost (litellm.completion_cost on
+record/live; the recorded cassette value on replay) — and appended to the SLO log. Latency is
+always this process's wall time: on replay that's the cassette read, and the record's
+mode="replay" is what tells a reader not to mistake it for a network round-trip.
+
 LiteLLM discipline (rule 5): SDK-only (never Proxy), lazy import, telemetry off, no callbacks,
 keys/base_url only via Settings. In replay the SDK is never imported at all.
 """
 
 from __future__ import annotations
 
+import time
+
 from app.config import Settings, get_settings
-from app.llm import cassettes
+from app.llm import cassettes, slo
 from app.llm.cassettes import Messages
+from app.llm.slo import CostSource
 from app.llm.tiers import resolve_model
 
 
@@ -21,6 +29,10 @@ async def route(tier: str, messages: Messages, *, settings: Settings | None = No
     model = resolve_model(tier, settings.tiers_path)
     key = cassettes.cassette_key(model, messages)
 
+    start = time.perf_counter()
+    cost_usd: float = 0.0
+    cost_source: CostSource = "none"
+
     if settings.llm_mode == "replay":
         response = cassettes.load(settings.cassettes_dir, key)
         if response is None:
@@ -29,16 +41,39 @@ async def route(tier: str, messages: Messages, *, settings: Settings | None = No
                 f"{settings.cassettes_dir}. replay never hits the network; record it explicitly "
                 "(LLM_MODE=record costs money, rule 4)."
             )
-        return response["content"]
+        content = response["content"]
+        if "cost_usd" in response:  # what the recorded call cost; actual spend here is $0
+            cost_usd, cost_source = float(response["cost_usd"]), "cassette"
+    else:
+        content, usage, live_cost = await _live_completion(model, messages, settings)
+        if live_cost is not None:
+            cost_usd, cost_source = live_cost, "live"
+        if settings.llm_mode == "record":
+            payload: dict = {"content": content, "usage": usage}
+            if live_cost is not None:  # unknown pricing stays absent, not a recorded $0
+                payload["cost_usd"] = cost_usd
+            cassettes.save(settings.cassettes_dir, key, model, messages, payload)
 
-    content = await _live_completion(model, messages, settings)
-    if settings.llm_mode == "record":
-        cassettes.save(settings.cassettes_dir, key, model, messages, {"content": content})
+    latency_ms = (time.perf_counter() - start) * 1000
+    slo.log_call(
+        tier=tier,
+        model=model,
+        settings=settings,
+        latency_ms=latency_ms,
+        cost_usd=cost_usd,
+        cost_source=cost_source,
+    )
     return content
 
 
-async def _live_completion(model: str, messages: Messages, settings: Settings) -> str:
-    """The one bare acompletion call. Reached only on record/live."""
+async def _live_completion(
+    model: str, messages: Messages, settings: Settings
+) -> tuple[str, dict | None, float | None]:
+    """The one bare acompletion call. Reached only on record/live.
+
+    Returns (content, usage, cost_usd); cost is None when litellm has no pricing for the model
+    — the call must not fail after the money is already spent.
+    """
     import litellm  # lazy: replay never imports the SDK
 
     # Shut every leak channel before the first call (rule 5).
@@ -54,4 +89,12 @@ async def _live_completion(model: str, messages: Messages, settings: Settings) -
         api_key=api_key,
         base_url=settings.openai_base_url,
     )
-    return resp["choices"][0]["message"]["content"]
+    content = resp["choices"][0]["message"]["content"]
+
+    usage = getattr(resp, "usage", None)
+    usage_dict = usage.model_dump(exclude_none=True) if usage is not None else None
+    try:
+        cost = float(litellm.completion_cost(completion_response=resp))
+    except Exception:
+        cost = None
+    return content, usage_dict, cost

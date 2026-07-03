@@ -22,3 +22,6 @@ mlflow-data/
 # Stray local sqlite if a client ever runs against the default URI instead of Settings.
 /mlflow.db
 /mlruns/
+
+# Access-layer SLO log (runtime artifact, iter 3)
+logs/

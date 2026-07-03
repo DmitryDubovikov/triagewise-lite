@@ -9,12 +9,12 @@
       "role": "user"
     }
   ],
-  "model": "gpt-4.1-nano-2025-04-14",
+  "model": "gpt-4.1-2025-04-14",
   "response": {
-    "content": "{\"category\": \"Login Issues\", \"priority\": \"high\", \"sentiment\": \"negative\", \"needs_human\": true, \"draft_reply\": \"Hello, I'm sorry you're experiencing login problems. Please contact our support team directly so we can assist you promptly and ensure you're able to join your team's standup.\"}",
-    "cost_usd": 3.7699999999999995e-05,
+    "content": "{\n  \"category\": \"login issue\",\n  \"priority\": \"urgent\",\n  \"sentiment\": \"negative\",\n  \"needs_human\": true,\n  \"draft_reply\": \"We're sorry you're unable to log in after resetting your password. Please confirm you're using the most recent reset link and password. If the issue persists, we'll escalate this to our technical team immediately to restore your access before your standup. Thank you for your patience.\"\n}",
+    "cost_usd": 0.000962,
     "usage": {
-      "completion_tokens": 65,
+      "completion_tokens": 91,
       "completion_tokens_details": {
         "accepted_prediction_tokens": 0,
         "audio_tokens": 0,
@@ -26,7 +26,7 @@
         "audio_tokens": 0,
         "cached_tokens": 0
       },
-      "total_tokens": 182
+      "total_tokens": 208
     }
   }
 }

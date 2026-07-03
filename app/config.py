@@ -29,8 +29,14 @@ class Settings(BaseSettings):
     openai_api_key: SecretStr | None = None
     openai_base_url: str | None = None
 
+    # SLO thresholds per call (LLM FinOps, iter 3). A breach WARNs in the SLO log — it
+    # never fails the call (existence-gate). Generous defaults; tighten via env to demo.
+    slo_max_cost_usd: float = 0.05
+    slo_max_latency_ms: float = 15_000
+
     # Paths and control-plane endpoints.
     tiers_path: Path = _ROOT / "llm-tiers.yaml"
+    llm_log_path: Path = _ROOT / "logs" / "llm_calls.jsonl"
     tickets_path: Path = _ROOT / "fixtures" / "tickets.jsonl"
     cassettes_dir: Path = _ROOT / "cassettes"
     # Golden set is DVC-versioned (not in git); eval/ holds the committed promptfoo

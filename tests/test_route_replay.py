@@ -7,6 +7,7 @@ throwaway sqlite registry (no server, no network) and in replay (no LLM), so the
 from __future__ import annotations
 
 import asyncio
+import json
 from pathlib import Path
 from typing import get_args
 
@@ -14,6 +15,7 @@ import pytest
 
 from app.config import Settings
 from app.domain.triage import Priority, Sentiment, TriageResult
+from app.llm.slo import check_slo
 from app.llm.tiers import load_tiers
 from app.persistence.prompts import (
     CHALLENGER,
@@ -29,7 +31,11 @@ from app.workflow.triage_flow import triage_ticket
 @pytest.fixture
 def registry(tmp_path: Path):
     """An offline sqlite-backed registry, synced with champion v1 + challenger v2."""
-    settings = Settings(llm_mode="replay", mlflow_tracking_uri=f"sqlite:///{tmp_path / 'reg.db'}")
+    settings = Settings(
+        llm_mode="replay",
+        mlflow_tracking_uri=f"sqlite:///{tmp_path / 'reg.db'}",
+        llm_log_path=tmp_path / "llm_calls.jsonl",  # keep the repo SLO log out of tests
+    )
     client = open_registry(settings)
     synced = sync_prompts(client)
     versions = {alias: s.version for alias, s in synced.items()}
@@ -68,6 +74,29 @@ def test_sync_prompts_is_idempotent(registry):
 
     assert all(not s.created for s in resynced.values())  # nothing re-registered
     assert {a: s.version for a, s in resynced.items()} == versions  # versions/aliases unchanged
+
+
+def test_slo_log_written_on_replay(registry):
+    """Access-layer existence gate (iter 3): a replay call appends one SLO record (JSONL)."""
+    client, settings, _ = registry
+    ticket = load_tickets(settings.tickets_path)[0]
+    asyncio.run(triage_ticket(ticket, tier="cheap", client=client, settings=settings))
+
+    lines = settings.llm_log_path.read_text().splitlines()
+    assert len(lines) == 1
+    rec = json.loads(lines[0])
+    assert rec["tier"] == "cheap" and rec["mode"] == "replay" and rec["model"]
+    assert rec["latency_ms"] >= 0 and rec["cost_usd"] >= 0
+    assert rec["cost_source"] in ("cassette", "none")
+    assert rec["slo_breaches"] == []  # generous defaults; replay must not breach
+
+
+def test_check_slo_flags_cost_and_latency_breaches():
+    """Pure threshold decision: both budgets exceeded -> both breaches named."""
+    settings = Settings(slo_max_cost_usd=0.001, slo_max_latency_ms=100)
+    breaches = check_slo(cost_usd=0.02, latency_ms=250, settings=settings)
+    assert len(breaches) == 2
+    assert any("cost" in b for b in breaches) and any("latency" in b for b in breaches)
 
 
 def test_replay_without_cassette_errors_offline(registry):

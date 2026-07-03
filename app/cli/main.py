@@ -11,6 +11,7 @@ the prompt now lives in MLflow (iter 1), so this needs the registry reachable (`
 from __future__ import annotations
 
 import asyncio
+import logging
 import sys
 
 from app.config import get_settings
@@ -21,6 +22,8 @@ from app.workflow.triage_flow import triage_ticket
 
 def main(argv: list[str] | None = None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
+    # Transport configures logging; the access layer just logs (SLO line lands on stderr).
+    logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(message)s")
     settings = get_settings()
     tickets = load_tickets(settings.tickets_path)
 
