@@ -14,8 +14,8 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v5
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v8
       - run: uv sync --extra dev
       # UV_NO_SYNC keeps `uv run` inside make from re-syncing without the dev extra.
       - run: make check
@@ -25,14 +25,14 @@ jobs:
   eval-gate:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
         with:
           # .nvmrc is the single source of the Node version (promptfoo 0.121.x needs >=22.22).
           node-version-file: .nvmrc
           cache: npm
       # promptfoo's node_modules tree is heavy; restoring it beats re-linking on every run.
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         id: node-modules
         with:
           path: node_modules
