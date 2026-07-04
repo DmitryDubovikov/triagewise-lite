@@ -22,6 +22,10 @@ logger = logging.getLogger(__name__)
 # (hand-authored cassette without cost / pricing lookup failed) — then it's 0.0.
 CostSource = Literal["live", "cassette", "none"]
 
+# Semantic-cache outcome (iter 4): hit = served from cache (no cassette, no network),
+# miss = went the normal route path and was stored, off = cache disabled or bypassed.
+CacheState = Literal["hit", "miss", "off"]
+
 
 class CallRecord(BaseModel):
     ts: str
@@ -31,6 +35,7 @@ class CallRecord(BaseModel):
     latency_ms: float
     cost_usd: float
     cost_source: CostSource
+    cache: CacheState
     slo_breaches: list[str] = Field(default_factory=list)
 
 
@@ -52,6 +57,7 @@ def log_call(
     latency_ms: float,
     cost_usd: float,
     cost_source: CostSource,
+    cache: CacheState,
 ) -> None:
     """Build the per-call record, append it to the JSONL SLO log, mirror a line to the logger."""
     record = CallRecord(
@@ -62,6 +68,7 @@ def log_call(
         latency_ms=round(latency_ms, 1),
         cost_usd=cost_usd,
         cost_source=cost_source,
+        cache=cache,
         slo_breaches=check_slo(cost_usd, latency_ms, settings),
     )
     settings.llm_log_path.parent.mkdir(parents=True, exist_ok=True)
@@ -72,6 +79,8 @@ def log_call(
         f"[slo] {record.tier}->{record.model} ({record.mode}) "
         f"{record.latency_ms:.0f}ms ${record.cost_usd:.6f} ({record.cost_source})"
     )
+    if record.cache != "off":
+        line += f" cache={record.cache}"
     if record.slo_breaches:
         logger.warning("%s BREACH: %s", line, "; ".join(record.slo_breaches))
     else:

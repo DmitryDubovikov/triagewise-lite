@@ -34,9 +34,16 @@ class Settings(BaseSettings):
     slo_max_cost_usd: float = 0.05
     slo_max_latency_ms: float = 15_000
 
+    # Semantic cache over the access layer (iter 4). Off by default: the plain replay path
+    # and CI stay byte-identical to iter 3; flip SEMANTIC_CACHE_ENABLED=1 to demo.
+    semantic_cache_enabled: bool = False
+    semantic_cache_threshold: float = 0.90
+    semantic_cache_embed_model: str = "BAAI/bge-small-en-v1.5"
+
     # Paths and control-plane endpoints.
     tiers_path: Path = _ROOT / "llm-tiers.yaml"
     llm_log_path: Path = _ROOT / "logs" / "llm_calls.jsonl"
+    semantic_cache_path: Path = _ROOT / "logs" / "semantic_cache.jsonl"
     tickets_path: Path = _ROOT / "fixtures" / "tickets.jsonl"
     cassettes_dir: Path = _ROOT / "cassettes"
     # Golden set is DVC-versioned (not in git); eval/ holds the committed promptfoo

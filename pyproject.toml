@@ -12,6 +12,9 @@ dependencies = [
     # MLflow Prompt Registry (iter 1). Full mlflow, not skinny: the sqlite registry store backs
     # offline tests. A uv-env dep, not a host runtime (tech-decisions: not clutter). Pin in uv.lock.
     "mlflow>=3.1,<4",
+    # Semantic-cache embeddings (iter 4): local ONNX, $0 per call, lazily imported — replay
+    # with the cache off never loads it. Pin in uv.lock.
+    "fastembed>=0.6,<1",
 ]
 
 [project.optional-dependencies]

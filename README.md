@@ -5,7 +5,7 @@ support tickets for a fictional SaaS (*Driftwood*). The app is a fixture; **the 
 product** — prompt registry, CI eval-gates, online evaluation, drift monitoring, and a
 continuous-evaluation loop. See `CLAUDE.md` (constitution) and `ROADMAP.md` (iteration backbone).
 
-## Quickstart (through iter 2 — CI eval-gate)
+## Quickstart (through iter 4 — semantic cache)
 
 ```bash
 uv sync --extra dev
@@ -19,6 +19,14 @@ uv run python -m scripts.register_prompt
 # Triage one ticket — loads the champion prompt by alias; LLM is offline/$0 in replay (default).
 uv run python -m app.cli.main DW-001
 
+# Semantic cache (iter 4, opt-in): a close-enough repeat is served from the cache — no cassette,
+# no network. DW-011 is a paraphrase of DW-001 and has no cassette of its own; the first command
+# seeds the cache (miss), the second is a semantic hit. First run downloads the embedding model
+# once (~30 MB, not LLM money). `make cache-stats` prints the hit-rate from the SLO log.
+SEMANTIC_CACHE_ENABLED=1 uv run python -m app.cli.main DW-001
+SEMANTIC_CACHE_ENABLED=1 uv run python -m app.cli.main DW-011
+make cache-stats
+
 # The CI eval gate (iter 2): promptfoo replays recorded outputs over the golden set — $0, no key.
 nvm use                         # Node version pinned in .nvmrc (promptfoo needs >=22.22)
 npm ci                          # project-local promptfoo, pinned by package-lock.json
@@ -30,7 +38,8 @@ make down                       # stop MLflow
 
 Make targets: `make check` (lint+types+tests), `make up`/`make down` (MLflow), `make test`, `make fmt`,
 `make eval` (CI eval gate, offline replay), `make eval-build` (regenerate `eval/` assets from the
-DVC-versioned golden set), `make eval-record` (⚠️ live, costs money — re-records `eval/outputs.json`).
+DVC-versioned golden set), `make eval-record` (⚠️ live, costs money — re-records `eval/outputs.json`),
+`make cache-stats` (semantic-cache hit-rate over the SLO log).
 
 The golden set (`data/golden.jsonl`, 40 labeled tickets) is DVC-versioned: `uv run dvc pull`
 restores it from the local dir remote (`../triagewise-lite-dvc-remote`).
