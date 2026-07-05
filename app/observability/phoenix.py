@@ -12,20 +12,105 @@ plus OpenInference input/output values so the Phoenix UI renders the exchange. D
 NO model/mode attributes: the span would only be re-predicting them, and the SLO log
 (app/llm/slo.py) is already the ground truth for model/mode/cache/cost per call.
 The drift report (scripts/drift_report.py) aggregates `triage.batch` x `triage.category`.
+
+This module is also the span-STORE seam (iter 5b): the vocabulary constants plus the
+read/write helpers every store client shares (judge flow, drift and judge reports). The
+helpers take the Phoenix client as an argument — it is opened at the transport boundary,
+and this module still imports nothing Phoenix at module level.
 """
 
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator, Mapping
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any
 
 from app.config import Settings
+from app.domain.judge import JudgeCandidate, JudgeVerdict
 
 if TYPE_CHECKING:
+    from phoenix.client import Client
+
     from app.domain.triage import Ticket, TriageResult
 
 SPAN_NAME = "triage_ticket"
+
+# One page of spans — the shared ceiling for every span-store reader (judge flow, drift and
+# judge reports). At ~21 spans per `make traffic` it truncates only after ~47 runs; readers
+# warn loudly when they hit it. Pagination — if the store ever really grows.
+FETCH_LIMIT = 1000
+
+# The judge's annotation on a span (iter 5b) — what reports and the Phoenix UI group by.
+JUDGE_ANNOTATION = "triage_quality"
+
+
+def fetch_triage_spans(client: Client, settings: Settings) -> tuple[list[Any], bool]:
+    """One page of traced triage spans, plus whether the page limit truncated the read."""
+    spans = client.spans.get_spans(
+        project_identifier=settings.phoenix_project, name=SPAN_NAME, limit=FETCH_LIMIT
+    )
+    return list(spans), len(spans) >= FETCH_LIMIT
+
+
+def fetch_judge_annotations(client: Client, settings: Settings, spans: list[Any]) -> list[Any]:
+    """The judge annotations already sitting on these spans — the incremental evaluator's
+    skip set, and the judge report's subject."""
+    if not spans:
+        return []
+    return list(
+        client.spans.get_span_annotations(
+            spans=spans,
+            project_identifier=settings.phoenix_project,
+            include_annotation_names=[JUDGE_ANNOTATION],
+            limit=FETCH_LIMIT,
+        )
+    )
+
+
+def extract_candidates(spans: Iterable[Mapping[str, Any]]) -> list[JudgeCandidate]:
+    """Parse raw span dicts (flat dotted attribute keys) into typed judge candidates,
+    dropping spans that don't carry a full triage exchange. The store dialect stays at
+    this seam; domain only ever sees JudgeCandidate."""
+    candidates: list[JudgeCandidate] = []
+    for span in spans:
+        span_id = (span.get("context") or {}).get("span_id")
+        attrs = span.get("attributes") or {}
+        ticket_id = attrs.get("triage.ticket_id")
+        ticket_text = attrs.get("input.value")
+        triage_json = attrs.get("output.value")
+        if not span_id or not ticket_id or ticket_text is None or triage_json is None:
+            continue
+        candidates.append(
+            JudgeCandidate(
+                span_id=str(span_id),
+                ticket_id=str(ticket_id),
+                ticket_text=str(ticket_text),
+                triage_json=str(triage_json),
+            )
+        )
+    return candidates
+
+
+def log_verdicts(client: Client, verdicts: Iterable[JudgeVerdict]) -> None:
+    """Write judge verdicts back as span annotations, next to the traces they judge."""
+    payload: list[Any] = []
+    for v in verdicts:
+        # Phoenix's AnnotationResult wants keys absent, not null, when there's no value.
+        result: dict[str, str | float] = {"label": v.label}
+        if v.score is not None:
+            result["score"] = v.score
+        if v.explanation is not None:
+            result["explanation"] = v.explanation
+        payload.append(
+            {
+                "span_id": v.span_id,
+                "name": JUDGE_ANNOTATION,
+                "annotator_kind": "LLM",
+                "result": result,
+            }
+        )
+    client.spans.log_span_annotations(span_annotations=payload, sync=True)
+
 
 # Set once by init_tracing(); None = tracing off, triage_span() is a no-op.
 _tracer: Any = None

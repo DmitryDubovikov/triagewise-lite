@@ -5,7 +5,7 @@ support tickets for a fictional SaaS (*Driftwood*). The app is a fixture; **the 
 product** — prompt registry, CI eval-gates, online evaluation, drift monitoring, and a
 continuous-evaluation loop. See `CLAUDE.md` (constitution) and `ROADMAP.md` (iteration backbone).
 
-## Quickstart (through iter 5a — drift monitoring)
+## Quickstart (through iter 5b — online LLM-as-judge)
 
 ```bash
 uv sync --extra dev
@@ -34,6 +34,13 @@ make traffic
 make drift-report               # DRIFT: new categories in 'postrelease': automation
 # Traces are also visible at http://localhost:6006 (project `triagewise`).
 
+# Online LLM-as-judge (iter 5b): a stronger model re-reads a sampled half of the traced
+# traffic and annotates each span correct/incorrect in Phoenix. The judge owns its LLM call —
+# `make judge` is LIVE (~$0.002 per judged span; needs OPENAI_API_KEY in .env). Incremental:
+# already-judged spans are skipped, so re-running without new traffic is a no-op and $0.
+make judge                      # ⚠️ live, costs money
+make judge-report               # verdict counts from Phoenix's store; exit 0 = judged spans exist
+
 # The CI eval gate (iter 2): promptfoo replays recorded outputs over the golden set — $0, no key.
 nvm use                         # Node version pinned in .nvmrc (promptfoo needs >=22.22)
 npm ci                          # project-local promptfoo, pinned by package-lock.json
@@ -48,7 +55,9 @@ Make targets: `make check` (lint+types+tests), `make up`/`make down` (MLflow + P
 from the DVC-versioned golden set), `make eval-record` (⚠️ live, costs money — re-records
 `eval/outputs.json`), `make cache-stats` (semantic-cache hit-rate over the SLO log),
 `make traffic` (both ticket batches through triage, traced to Phoenix, replay/$0),
-`make drift-report` (drift verdict from Phoenix's span store; exit 0 = drift caught).
+`make drift-report` (drift verdict from Phoenix's span store; exit 0 = drift caught),
+`make judge` (⚠️ live, costs money — LLM-as-judge over sampled traced spans, incremental),
+`make judge-report` (judge verdicts from Phoenix's store; exit 0 = judged spans exist).
 
 The golden set (`data/golden.jsonl`, 40 labeled tickets) is DVC-versioned: `uv run dvc pull`
 restores it from the local dir remote (`../triagewise-lite-dvc-remote`).

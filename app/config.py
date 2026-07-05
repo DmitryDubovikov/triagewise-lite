@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     phoenix_endpoint: str = "http://localhost:6006"
     phoenix_project: str = "triagewise"
 
+    # Online LLM-as-judge (iter 5b): what fraction of traced traffic gets judged. Sampling is
+    # deterministic per ticket_id, so the same traffic always picks the same spans.
+    judge_sample_rate: float = 0.5
+
     # Paths and control-plane endpoints.
     tiers_path: Path = _ROOT / "llm-tiers.yaml"
     llm_log_path: Path = _ROOT / "logs" / "llm_calls.jsonl"

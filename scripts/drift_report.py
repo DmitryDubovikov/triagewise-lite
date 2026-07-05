@@ -14,7 +14,7 @@ import sys
 
 from app.config import get_settings
 from app.domain.drift import category_drift
-from app.observability.phoenix import SPAN_NAME
+from app.observability.phoenix import fetch_triage_spans
 
 BASELINE = "base"
 CANDIDATE = "postrelease"
@@ -25,12 +25,10 @@ def main() -> int:
 
     settings = get_settings()
     client = Client(base_url=settings.phoenix_endpoint)
-    spans = client.spans.get_spans(
-        project_identifier=settings.phoenix_project, name=SPAN_NAME, limit=1000
-    )
-    if len(spans) == 1000:
+    spans, truncated = fetch_triage_spans(client, settings)
+    if truncated:
         print(
-            "warning: span fetch hit limit=1000 — sample truncated, verdict may be unreliable",
+            "warning: span fetch hit the page limit — sample truncated, verdict may be unreliable",
             file=sys.stderr,
         )
 

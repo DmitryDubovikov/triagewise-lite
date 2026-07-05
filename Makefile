@@ -1,4 +1,4 @@
-.PHONY: check up down test fmt eval eval-build eval-record cache-stats traffic drift-report
+.PHONY: check up down test fmt eval eval-build eval-record cache-stats traffic drift-report judge judge-report
 
 # promptfoo hygiene: telemetry/update pings off. Note: promptfoo's own cache hashes the
 # whole request INCLUDING the API key, so a committed cache can't replay keyless in CI —
@@ -70,6 +70,18 @@ traffic:
 # Drift verdict from Phoenix's span store, not the UI (rule 8). Exit 0 = drift caught.
 drift-report:
 	uv run python -m scripts.drift_report
+
+# Online LLM-as-judge (iter 5b) — LIVE, costs money (rule 4): phoenix.evals judges sampled
+# traced spans at JUDGE_TIER (~$0.03-0.10 over the two fixture batches) and writes verdicts
+# back as span annotations. Incremental: already-judged spans are skipped, so re-running
+# without new traffic is a no-op and $0. Needs `make up` + `make traffic` + .env with key.
+judge:
+	@test -f .env || { echo "judge is live and needs .env with OPENAI_API_KEY (rule 4)"; exit 1; }
+	uv run python -m app.cli.judge
+
+# Judge verdicts from Phoenix's span store, not the UI (rule 8). Exit 0 = judged spans exist.
+judge-report:
+	uv run python -m scripts.judge_report
 
 # Control-plane backends (MLflow :5050, Phoenix :6006).
 up:

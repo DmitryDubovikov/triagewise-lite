@@ -20,6 +20,10 @@ dependencies = [
     # drift report (rule 8: verify the store, not the UI). Pins in uv.lock.
     "arize-phoenix-otel>=0.16.1,<1",
     "arize-phoenix-client>=2.12,<3",
+    # Online LLM-as-judge harness (iter 5b) — owns its LLM call (tech-decisions exception,
+    # like promptfoo), so it's live-gated; lazily imported, replay/CI never load it. Its
+    # OpenAI client is the openai SDK already present via litellm. Pin in uv.lock.
+    "arize-phoenix-evals>=3.1,<4",
 ]
 
 [project.optional-dependencies]
