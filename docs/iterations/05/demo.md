@@ -100,9 +100,9 @@ exit=0
 
 Стор уже подтвердил дрейф на шаге 5; UI — просто витрина тех же данных для скриншота в отчёт.
 
-Открыть http://localhost:6006 → проект `triagewise` → Traces.
+Открыть http://localhost:6006 → проект `triagewise` → Traces → кликнуть любой спан `triage_ticket`.
 
-**Ожидаемо:** спаны `triage_ticket` обеих пачек; у каждого в атрибутах `triage.batch`, `triage.category`, вход тикета и JSON-ответ триажа.
+**Ожидаемо:** в списке — спаны `triage_ticket` обеих пачек (kind `chain`). В панели спана вкладка **Info** показывает вход тикета (Input) и JSON-ответ триажа (Output) — это OpenInference-поля `input.value`/`output.value`; а наши метки `triage.batch`, `triage.category`, `triage.ticket_id`, `triage.tier` лежат на соседней вкладке **Attributes** (Phoenix группирует точечные ключи в дерево `triage → …`).
 
 ### 7. Идемпотентность: повторный трафик не ломает вердикт
 
