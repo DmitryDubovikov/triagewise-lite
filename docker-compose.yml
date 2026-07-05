@@ -1,4 +1,5 @@
-# Slim control-plane backend: MLflow only (tracking + Prompt Registry from iter 1).
+# Slim control-plane backends: MLflow (tracking + Prompt Registry, iter 1) and Arize Phoenix
+# (online observability + drift, iter 5a).
 # Host processes talk to it over localhost:5050 HTTP — NO shared filesystem (rule: --serve-artifacts
 # so clients fetch artifacts via HTTP, avoiding host/container path-mismatch). Containers never
 # reach OpenAI; LLM egress is host-only (tech-decisions: execution boundary).
@@ -17,3 +18,15 @@ services:
       --serve-artifacts
       --host 0.0.0.0
       --port 5000
+
+  # Online observability (iter 5a): spans arrive over OTLP-HTTP on the same port as the UI
+  # (/v1/traces) and persist in sqlite under the volume — symmetric to MLflow. Only the HTTP
+  # port is published (no gRPC), and the container never reaches OpenAI (execution boundary).
+  phoenix:
+    image: arizephoenix/phoenix:17.17.0
+    ports:
+      - "6006:6006"
+    environment:
+      - PHOENIX_WORKING_DIR=/mnt/data
+    volumes:
+      - ./phoenix-data:/mnt/data

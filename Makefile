@@ -1,4 +1,4 @@
-.PHONY: check up down test fmt eval eval-build eval-record cache-stats
+.PHONY: check up down test fmt eval eval-build eval-record cache-stats traffic drift-report
 
 # promptfoo hygiene: telemetry/update pings off. Note: promptfoo's own cache hashes the
 # whole request INCLUDING the API key, so a committed cache can't replay keyless in CI —
@@ -60,9 +60,20 @@ cache-stats:
 		else {cached_path_calls: $$n, hits: $$h, hit_rate: ($$h / $$n)} end' \
 		logs/llm_calls.jsonl
 
-# Control-plane backend (MLflow) — localhost:5000.
+# Both traffic batches through triage, traced to Phoenix (iter 5a) — replay, offline, $0.
+# Traces are append-only; re-running adds spans but never flips the drift verdict (the
+# report compares per-batch distributions).
+traffic:
+	PHOENIX_ENABLED=1 uv run python -m app.cli.batch fixtures/tickets.jsonl --batch base
+	PHOENIX_ENABLED=1 uv run python -m app.cli.batch fixtures/tickets_postrelease.jsonl --batch postrelease
+
+# Drift verdict from Phoenix's span store, not the UI (rule 8). Exit 0 = drift caught.
+drift-report:
+	uv run python -m scripts.drift_report
+
+# Control-plane backends (MLflow :5050, Phoenix :6006).
 up:
-	docker compose up -d mlflow
+	docker compose up -d mlflow phoenix
 
 down:
 	docker compose down

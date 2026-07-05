@@ -15,6 +15,7 @@ import logging
 import sys
 
 from app.config import get_settings
+from app.observability.phoenix import init_tracing
 from app.persistence.prompts import open_registry
 from app.persistence.tickets import get_ticket, load_tickets
 from app.workflow.triage_flow import triage_ticket
@@ -25,6 +26,7 @@ def main(argv: list[str] | None = None) -> int:
     # Transport configures logging; the access layer just logs (SLO line lands on stderr).
     logging.basicConfig(level=logging.INFO, stream=sys.stderr, format="%(message)s")
     settings = get_settings()
+    init_tracing(settings)  # no-op unless PHOENIX_ENABLED=1 (iter 5a)
     tickets = load_tickets(settings.tickets_path)
 
     wanted = argv[0] if argv else None

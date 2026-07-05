@@ -15,6 +15,11 @@ dependencies = [
     # Semantic-cache embeddings (iter 4): local ONNX, $0 per call, lazily imported — replay
     # with the cache off never loads it. Pin in uv.lock.
     "fastembed>=0.6,<1",
+    # Phoenix wiring (iter 5a), not the server — that runs in Docker. Both lazily imported:
+    # -otel exports spans (only when PHOENIX_ENABLED=1), -client reads them back for the
+    # drift report (rule 8: verify the store, not the UI). Pins in uv.lock.
+    "arize-phoenix-otel>=0.16.1,<1",
+    "arize-phoenix-client>=2.12,<3",
 ]
 
 [project.optional-dependencies]
@@ -42,7 +47,9 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-q"
+# -p no:phoenix — arize-phoenix-client ships an auto-loaded pytest plugin; without this every
+# test run silently imports `phoenix.*`, defeating the tracing-off-imports-nothing gate.
+addopts = "-q -p no:phoenix"
 
 [[tool.mypy.overrides]]
 # mlflow ships no usable type stubs; the prompt-registry surface is exercised via tests.

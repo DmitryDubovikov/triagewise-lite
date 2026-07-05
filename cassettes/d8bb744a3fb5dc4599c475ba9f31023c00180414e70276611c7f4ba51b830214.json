@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Charged for the Automations add-on we never enabled\n\nOur June invoice has a $19 line item 'Automations add-on' but nobody on the team enabled it. Please remove it and refund the charge.",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"billing\",\"priority\":\"high\",\"sentiment\":\"negative\",\"needs_human\":true,\"draft_reply\":\"Sorry about that \u2014 the Automations add-on shouldn't appear unless enabled by an admin. I've flagged the $19 line item to billing for removal and refund, and asked them to audit how it was activated.\"}"
+  }
+}

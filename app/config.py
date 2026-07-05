@@ -40,11 +40,22 @@ class Settings(BaseSettings):
     semantic_cache_threshold: float = 0.90
     semantic_cache_embed_model: str = "BAAI/bge-small-en-v1.5"
 
+    # Phoenix online observability (iter 5a). Off by default: replay paths, tests and CI
+    # neither import OTel nor try to export anything; flip PHOENIX_ENABLED=1 to trace.
+    phoenix_enabled: bool = False
+    phoenix_endpoint: str = "http://localhost:6006"
+    phoenix_project: str = "triagewise"
+
     # Paths and control-plane endpoints.
     tiers_path: Path = _ROOT / "llm-tiers.yaml"
     llm_log_path: Path = _ROOT / "logs" / "llm_calls.jsonl"
     semantic_cache_path: Path = _ROOT / "logs" / "semantic_cache.jsonl"
     tickets_path: Path = _ROOT / "fixtures" / "tickets.jsonl"
+    # Post-release ticket batch (iter 5a): introduces the new `automation` category so the
+    # drift monitor has something to catch. Fabricated replies for BOTH batches live in
+    # replies_path and become offline cassettes via scripts.author_cassette.
+    tickets_postrelease_path: Path = _ROOT / "fixtures" / "tickets_postrelease.jsonl"
+    replies_path: Path = _ROOT / "fixtures" / "replies.jsonl"
     cassettes_dir: Path = _ROOT / "cassettes"
     # Golden set is DVC-versioned (not in git); eval/ holds the committed promptfoo
     # assets generated from it by scripts/build_eval.py.

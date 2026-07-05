@@ -1,0 +1,152 @@
+# Итерация 05 (5a) — Arize Phoenix: трейсинг триажа и мониторинг дрейфа
+
+> 🎯 **Цель проекта:** минимальными затратами — максимальное знакомство с инструментами LLMOps-жизненного цикла. Existence-gate, не accuracy-gate.
+
+## Зачем это (продукт и ценность)
+
+Продукт triagewise-lite сортирует входящие support-тикеты Driftwood — категория, приоритет, тон, нужен ли человек, черновик ответа — без ручного разбора, и держит этот LLM-конвейер под операционным контролем. До этой итерации конвейер был слепым в одну важную сторону: промпт версионируется (iter 1), регрессии ловит CI (iter 2), стоимость каждого вызова пишется в SLO-лог (iter 3) — но **что конвейер реально отвечает на живом потоке, никто не видел**. Если завтра Driftwood выкатит новую фичу и в тикетах появится тема, которой промпт не знает, саппорт-лид узнает об этом от разъярённых клиентов, а не от системы. Эта итерация добавляет ровно этот кусок контроля: каждый разобранный тикет оставляет след в observability-сервисе, и отчёт по этим следам механически ловит момент, когда распределение ответов «поехало» — в нашем демо-сценарии после релиза фичи Automations в потоке появляется категория `automation`, которой в базовом трафике не было.
+
+## 🧵 Что это дало резюме
+
+Пункт north-star «**LLM output drift / quality monitoring**» стал демонстрируемым: `make traffic` прогоняет две пачки тикетов с трейсингом в Arize Phoenix, а `make drift-report` опрашивает стор Phoenix и выходит с кодом 0 только если дрейф пойман (`DRIFT: new categories in 'postrelease': automation`). Вторая половина строки ROADMAP — online LLM-as-judge — сознательно вынесена в итерацию 5b.
+
+## TL;DR (простыми словами)
+
+Раньше триаж отрабатывал и результат просто печатался в консоль — истории ответов не оставалось нигде. Теперь рядом с MLflow в Docker живёт второй сервис, Arize Phoenix, и каждый разобранный тикет отправляет туда «спан» — запись о том, какой тикет, из какой пачки трафика и что модель ответила. Добавили вторую, «пострелизную» пачку тикетов (про новую фичу Automations) — и отчёт `make drift-report`, сравнив распределения категорий двух пачек, поймал появление новой категории. Всё это работает офлайн и бесплатно: ответы модели читаются из кассет.
+
+## Что это за инструмент
+
+**Arize Phoenix** — это open-source сервис LLM-observability: он принимает и хранит трейсы LLM-приложений и даёт по ним UI и API — примерно как Jaeger/Zipkin для микросервисов, но со словарём и экранами, заточенными под LLM (вход/выход модели, оценки, дрейф). В этой итерации он решает задачу «видеть, что конвейер отвечает на потоке»: каждый триаж оставляет в Phoenix запись, и по этим записям строится отчёт о дрейфе. Ключевые понятия, которыми оперирует остальной текст: *спан* — одна запись о единице работы (у нас: один разобранный тикет) с произвольными атрибутами-ключами; *трейс* — цепочка спанов одного запроса (у нас трейс состоит из одного спана); *OTLP* — стандартный протокол OpenTelemetry, по которому спаны доставляются в коллектор (Phoenix слушает его по HTTP на том же порту, что и UI); *проект* — namespace в Phoenix, куда складываются трейсы (у нас один, `triagewise`).
+
+Обвязка на нашей стороне — два маленьких пакета: `arize-phoenix-otel` (настраивает OTel-экспортёр на Phoenix и даёт tracer) и `arize-phoenix-client` (HTTP-клиент, которым отчёт читает спаны обратно). Сам сервер Phoenix в Python-окружение не ставится — он живёт в Docker.
+
+## Поток данных
+
+Всё начинается с оператора: он хочет прогнать через триаж целую пачку тикетов и набирает `make traffic` (внутри — два вызова `python -m app.cli.batch`, по одному на пачку). Batch-транспорт первым делом включает трейсинг: `init_tracing()` видит `PHOENIX_ENABLED=1` и подключает OTel-экспортёр к Phoenix (без этого флага всё бы отработало как раньше, просто без следов). Дальше на каждый тикет вызывается обычный workflow `triage_ticket`: чтобы разобрать тикет, нужен промпт — он грузится из MLflow-реестра по alias `champion`; чтобы получить ответ — вызов уходит в `route()`, который в режиме `replay` читает кассету вместо сети. Весь этот разбор обёрнут в спан: когда ответ распарсен, на спан ложатся категория/приоритет/тон/needs_human плюс метка пачки `triage.batch`, и спан улетает в Phoenix. Когда обе пачки прогнаны, оператор спрашивает вердикт: `make drift-report` читает спаны из Phoenix через REST-клиент, отдаёт пары `(пачка, категория)` чистой функции `category_drift()` — и та отвечает, появились ли в пострелизной пачке категории, которых не было в базовой.
+
+```
+оператор: make traffic
+    │
+    ▼
+app.cli.batch ──── init_tracing(Settings) ────────────┐
+    │  на каждый тикет                                │ OTLP-HTTP
+    ▼                                                 ▼
+triage_ticket ──► MLflow (промпт по alias)      Phoenix :6006
+    │                                                 ▲
+    ├─ triage_span ── атрибуты {batch, category, …} ──┘
+    ▼
+route("cheap") ──► кассета (replay, $0)
+
+оператор: make drift-report
+    │
+    ▼
+scripts.drift_report ──► Phoenix REST (get_spans) ──► category_drift() ──► вердикт + exit-код
+```
+
+| Инструмент / шаг | Что делает | Куда пишет |
+|---|---|---|
+| `app.cli.batch` (`make traffic`) | прогоняет пачку тикетов через `triage_ticket` с меткой `--batch` | stdout: `[DW-…] категория` |
+| `triage_span` (`app/observability/phoenix.py`) | оборачивает каждый триаж в спан с атрибутами `triage.*` | Phoenix, проект `triagewise` (OTLP-HTTP на `:6006/v1/traces`) |
+| `route("cheap", …)` | резолвит тир в модель и читает ответ из кассеты | SLO-лог `logs/llm_calls.jsonl` (как с iter 3) |
+| `scripts.drift_report` (`make drift-report`) | читает спаны из Phoenix, считает распределения категорий по пачкам | stdout: JSON-отчёт + строка `DRIFT: …`; exit 0 = дрейф пойман |
+| Phoenix (Docker) | хранит спаны между прогонами и рисует их в UI | volume `./phoenix-data` |
+
+Честные оговорки. **Online LLM-as-judge здесь ещё нет** — спаны несут ответы модели, но никто их не оценивает; это итерация 5b. **Дрейф — категориальный, не семантический:** ловим появление новой категории в распределении, embedding-дрейф не считаем. **«Ответы модели» в этом прогоне — сфабрикованные кассеты** (см. learnings): дрейф вшит в фикстуру намеренно, чтобы монитору было что ловить; сам механизм (спаны → распределения → вердикт) от этого не зависит. И наглядно, что именно ловится:
+
+```
+base (11 тикетов):           postrelease (10 тикетов):
+bug             ████ 4        automation      ████████ 8   ◄─ новая категория = дрейф
+billing         ██ 2          billing         █ 1
+feature_request ██ 2          account_access  █ 1
+account_access  █ 1
+how_to          █ 1
+Login Issues    █ 1   ◄─ единственная живая кассета (DW-001) отвечает свободной формой
+```
+
+## Карта «где в коде»
+
+Номера строк — ориентир на момент итерации; имена функций надёжнее.
+
+1. **Phoenix-сервис в Compose** — `docker-compose.yml:25-32`. Второй контейнер control plane, симметричный MLflow: пин образа, volume для персистентности, наружу опубликован только HTTP-порт 6006 (он же UI, он же OTLP-коллектор; gRPC не публикуем). Контейнер в сеть к OpenAI не ходит — LLM-egress остаётся только с хоста (шов исполнения из tech-decisions).
+
+    ```yaml
+    phoenix:
+      image: arizephoenix/phoenix:17.17.0
+      ports:
+        - "6006:6006"
+      environment:
+        - PHOENIX_WORKING_DIR=/mnt/data
+      volumes:
+        - ./phoenix-data:/mnt/data
+    ```
+
+2. **Настройки Phoenix и пути фикстур** — `app/config.py:45-47` и `:60-64`. Всё по конвенции «env только через `Settings`»: флаг `phoenix_enabled` (по умолчанию **выключен** — тесты и CI не знают о Phoenix), endpoint и имя проекта, плюс пути к пострелизной пачке и файлу реплаев.
+
+    ```python
+    phoenix_enabled: bool = False
+    phoenix_endpoint: str = "http://localhost:6006"
+    phoenix_project: str = "triagewise"
+    ```
+
+3. **Модуль трейсинга** — `app/observability/phoenix.py`: `init_tracing()` (:34), `SpanRecorder` (:55), `triage_span()` (:72). Это единственное место, знающее про OTel. `init_tracing()` вызывается на транспортном boundary (как открытие реестр-хендла) и при выключенном флаге возвращает `False`, не импортируя ничего из `phoenix.*`; `triage_span()` без инициализации отдаёт no-op-рекордер. На спан осознанно **не** кладутся модель и режим — спан их мог бы только «предсказать», а ground truth для модели/режима/кэша/стоимости уже есть в SLO-логе iter 3.
+
+    ```python
+    @contextmanager
+    def triage_span(ticket: Ticket, *, tier: str, batch: str | None = None) -> Iterator[SpanRecorder]:
+        if _tracer is None:
+            yield SpanRecorder()
+            return
+        with _tracer.start_as_current_span(SPAN_NAME) as span:
+            span.set_attribute("openinference.span.kind", "CHAIN")
+            span.set_attribute("input.value", f"{ticket.subject}\n\n{ticket.body}")
+            span.set_attribute("triage.ticket_id", ticket.id)
+            span.set_attribute("triage.tier", tier)
+            if batch is not None:
+                span.set_attribute("triage.batch", batch)
+            yield SpanRecorder(span)
+    ```
+
+4. **Спан вокруг workflow** — `app/workflow/triage_flow.py:27-41`. `triage_ticket()` получил необязательную метку `batch` и оборачивает свою работу в `triage_span`; когда ответ распарсен, `recorder.set_result(result)` докладывает на спан категорию/приоритет/тон/needs_human. Workflow по-прежнему не знает ни про модель (правило «слои зовут `route()` и про модель не знают»), ни про то, включён ли трейсинг.
+
+    ```python
+    with triage_span(ticket, tier=tier, batch=batch) as recorder:
+        content = await route(tier, messages, settings=settings)
+        result = parse_triage(content)
+        recorder.set_result(result)
+    ```
+
+5. **Batch-транспорт** — `app/cli/batch.py:27` (`main()`). Тонкий адаптер по образцу `app/cli/main.py`: парсит путь к пачке и обязательный `--batch`-лейбл, включает трейсинг, открывает реестр и последовательно гонит тикеты через `triage_ticket`, печатая `[DW-…] категория` на каждый.
+
+6. **Чистая drift-функция** — `app/domain/drift.py`: `CategoryDrift` (:16), `category_drift()` (:22). Домен без I/O: на вход — пары `(пачка, категория)`, на выход — распределения, список новых категорий и булев вердикт. Считает по множествам категорий, а не по счётчикам — поэтому повторные прогоны трафика (спаны append-only) раздувают счётчики, но не меняют вердикт.
+
+    ```python
+    def category_drift(rows: Iterable[tuple[str, str]], *, baseline: str, candidate: str) -> CategoryDrift:
+        dist: dict[str, Counter[str]] = defaultdict(Counter)
+        for batch, category in rows:
+            dist[batch][category] += 1
+        new = sorted(set(dist.get(candidate, Counter())) - set(dist.get(baseline, Counter())))
+        ...
+    ```
+
+7. **Drift-отчёт** — `scripts/drift_report.py:23` (`main()`). Спрашивает **стор, а не UI** (правило 8): через `phoenix.client` забирает спаны `triage_ticket` проекта, вынимает плоские атрибуты `triage.batch`/`triage.category`, отдаёт их `category_drift()` и печатает JSON-отчёт. Exit-код — механический вердикт: 0 = дрейф пойман, 1 = спанов нет или дрейфа не видно; при упоре в `limit=1000` печатается предупреждение об усечении выборки.
+
+    ```python
+    spans = client.spans.get_spans(project_identifier=settings.phoenix_project, name=SPAN_NAME, limit=1000)
+    ...
+    report = category_drift(rows, baseline=BASELINE, candidate=CANDIDATE)
+    ```
+
+8. **Фикстура дрейфа** — `fixtures/tickets_postrelease.jsonl` (10 тикетов про релиз Automations: DW-101…DW-110) и `fixtures/replies.jsonl` (21 сфабрикованный формат-валидный ответ на оба батча). Читаются через `load_tickets()` и новый `load_replies()` (`app/persistence/tickets.py:16`), который валидирует каждый реплай как `TriageResult` прямо на границе чтения.
+
+9. **Кассетный автор с защитой оплаченных записей** — `scripts/author_cassette.py`. Переписан с захардкоженного словаря на `replies.jsonl` и режим `--all` (авторит кассеты обеих пачек за один запуск, офлайн и бесплатно). Важный guard (:77-78): если по этому же ключу лежит **живая** кассета (с `usage`/`cost_usd` — маркеры реальной записи за деньги), фабрикация её не перезаписывает, а пропускает с сообщением.
+
+    ```python
+    existing = load(settings.cassettes_dir, key)
+    if existing is not None and ("usage" in existing or "cost_usd" in existing):
+        print(f"Skipping {ticket.id}: live-recorded cassette exists ({key[:12]}…) — ...")
+        continue
+    ```
+
+10. **Гейт «выключено = ничего не импортируется»** — `tests/test_drift_monitoring.py` и `pyproject.toml:52`. Тест `test_tracing_off_is_a_noop` проверяет, что при дефолтном `PHOENIX_ENABLED=0` в `sys.modules` нет ни одного модуля `phoenix.*`. Чтобы этот гейт вообще имел смысл, пришлось добавить `-p no:phoenix` в `addopts`: `arize-phoenix-client` ставит собственный pytest-плагин, который иначе молча импортирует `phoenix.*` в каждый прогон тестов.
+
+11. **Make-цели** — `Makefile:63-72`: `make traffic` (обе пачки с `PHOENIX_ENABLED=1`, replay, $0) и `make drift-report`; `make up` теперь поднимает оба контейнера.

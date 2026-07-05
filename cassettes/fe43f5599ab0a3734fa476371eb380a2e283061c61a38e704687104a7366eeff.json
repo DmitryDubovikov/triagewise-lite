@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Thanks for the quick fix earlier \u2014 one more thing\n\nReally appreciate your team sorting out the webhook issue yesterday, you've been great. That said, this is the third week in a row something has broken in our integration and honestly my manager is asking whether we should switch tools. The Slack notifications stopped firing again this morning.",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"bug\",\"priority\":\"high\",\"sentiment\":\"negative\",\"needs_human\":true,\"draft_reply\":\"Thank you for the kind words \u2014 and you're right to be frustrated that integrations keep breaking. I've reopened the Slack notification issue with high priority and asked an engineer to follow up with you directly today.\"}"
+  }
+}

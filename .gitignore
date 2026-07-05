@@ -17,8 +17,9 @@ eval/.promptfoo-cache/
 # Env / secrets
 .env
 
-# MLflow / Docker local state (mounted volumes)
+# MLflow / Phoenix / Docker local state (mounted volumes)
 mlflow-data/
+phoenix-data/
 # Stray local sqlite if a client ever runs against the default URI instead of Settings.
 /mlflow.db
 /mlruns/

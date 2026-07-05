@@ -5,12 +5,22 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from app.domain.triage import GoldenTicket, Ticket
+from app.domain.triage import GoldenTicket, Ticket, TriageResult
 
 
 def load_tickets(path: Path) -> list[Ticket]:
     lines = path.read_text().splitlines()
     return [Ticket.model_validate(json.loads(line)) for line in lines if line.strip()]
+
+
+def load_replies(path: Path) -> dict[str, TriageResult]:
+    """Read the fabricated-reply fixture (iter 5a): ticket id -> format-valid TriageResult.
+
+    These back the offline cassettes for both traffic batches (scripts.author_cassette).
+    Validation is the point: a malformed reply fails here, not inside a replayed triage.
+    """
+    rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    return {row["id"]: TriageResult.model_validate(row["reply"]) for row in rows}
 
 
 def load_golden(path: Path) -> list[GoldenTicket]:

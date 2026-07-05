@@ -20,7 +20,8 @@
 | **2** ✅ | **promptfoo** | **CI eval-gate / regression testing для LLM** | golden-сет под **DVC**; promptfoo гоняет champion-промпт по golden, ассертит формат/поля; **CI job красный при регрессии** (меняю промпт «во вред» → мёрдж заблокирован) | DVC из sentiment |
 | **3** ✅ | **LiteLLM access-layer** *(SDK, углублённо)* | **Cost/latency SLO (LLM FinOps) · productionized routing** | роутинг `cheap`↔`smart` как первичный chokepoint; **cost+latency на вызов** через `completion_cost` (SLO-лог); **security-гейт (механически проверяемо, правило 5):** в коде только `litellm.acompletion` и **нет** импорта `litellm.proxy`/server-процесса · `litellm.callbacks`/`success_callback`/`failure_callback` пусты · `litellm.telemetry=False` выставлен до первого вызова · версия запиннена в `pyproject.toml` + `uv.lock` | LiteLLM из policywise (там был bare-call; здесь — выпуклее) |
 | **4** ✅ | — *(semantic cache поверх access-layer)* | **Productionized routing + semantic caching** | **semantic cache** поверх готового access-layer (iter 3): повтор/близкий запрос → **hit** без сетевого вызова; метрика hit-rate; промах → нормальный `route`-путь (кассеты `replay`-нейтральны) | — (надстройка над iter 3) |
-| **5** | **Arize Phoenix** | **Online evaluation / LLM-as-judge в проде · drift / quality monitoring** | сэмплинг трафика → **online LLM-as-judge** (`smart`-тир); вторая («пострелизная») пачка → **Phoenix-дашборд показывает дрейф** распределения/качества | новый |
+| **5a** ✅ | **Arize Phoenix** | **LLM output drift / quality monitoring** | Phoenix в Compose + трейсинг триажа; вторая («пострелизная») пачка → **Phoenix показывает дрейф** распределения категорий; drift-report через Phoenix API (не UI); всё в `replay` ($0) | новый |
+| **5b** | — *(Phoenix, углублённо)* | **Online evaluation / LLM-as-judge в проде** | сэмплинг трафика → **online LLM-as-judge** (`smart`-тир, live-гейт); оценки judge видны в Phoenix рядом с трейсами | — (надстройка над 5a) |
 | **6** | — *(петля замыкается, Prefect)* | **Continuous evaluation loop** (LLM-аналог continuous training) | Prefect по расписанию: re-eval `challenger` на golden → **gate** (challenger > champion?) → **swap alias `champion`** → access-layer **hot-reload**. Запускаю flow с лучшим challenger → alias переезжает на новую версию (**verify в MLflow-реестре**) | Prefect из sentiment |
 | **7** *(опц. хвост)* | на выбор | усиление красной нити | guardrails-фреймворк / feedback-collection UI (Chainlit reuse) / cost-budget alerting / MLX local tail | — |
 
@@ -37,8 +38,8 @@
 | LLMOps / LLM lifecycle management | весь проект (зонт) |
 | Prompt-as-artifact + champion/challenger промоушен | iter 1, 6 |
 | CI eval-gate / regression testing | iter 2 |
-| Online eval / LLM-as-judge в проде | iter 5 |
-| LLM output drift / quality monitoring | iter 5 |
+| Online eval / LLM-as-judge в проде | iter 5b |
+| LLM output drift / quality monitoring | iter 5a |
 | Cost & latency SLO (LLM FinOps) | iter 3 |
 | Continuous evaluation loop | iter 6 |
 | Productionized routing + semantic caching | iter 3, 4 |

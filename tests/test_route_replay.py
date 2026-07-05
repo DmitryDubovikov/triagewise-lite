@@ -14,7 +14,7 @@ from typing import get_args
 import pytest
 
 from app.config import Settings
-from app.domain.triage import Priority, Sentiment, TriageResult
+from app.domain.triage import Priority, Sentiment, Ticket, TriageResult
 from app.llm.slo import check_slo
 from app.llm.tiers import load_tiers
 from app.persistence.prompts import (
@@ -102,7 +102,8 @@ def test_check_slo_flags_cost_and_latency_breaches():
 def test_replay_without_cassette_errors_offline(registry):
     """No cassette in replay -> clear error, never a silent network call (rule 4)."""
     client, settings, _ = registry
-    ticket = load_tickets(settings.tickets_path)[1]  # DW-002 has no cassette
+    # A ticket outside the fixtures: both batches have authored cassettes since iter 5a.
+    ticket = Ticket(id="DW-999", subject="Unrecorded", body="No cassette was authored for this.")
     with pytest.raises(FileNotFoundError):
         asyncio.run(triage_ticket(ticket, tier="cheap", client=client, settings=settings))
 
