@@ -1,4 +1,4 @@
-.PHONY: check up down test fmt eval eval-build eval-record cache-stats traffic drift-report judge judge-report
+.PHONY: check up down test fmt eval eval-build eval-record cache-stats traffic drift-report judge judge-report promote
 
 # promptfoo hygiene: telemetry/update pings off. Note: promptfoo's own cache hashes the
 # whole request INCLUDING the API key, so a committed cache can't replay keyless in CI —
@@ -82,6 +82,13 @@ judge:
 # Judge verdicts from Phoenix's span store, not the UI (rule 8). Exit 0 = judged spans exist.
 judge-report:
 	uv run python -m scripts.judge_report
+
+# Promotion loop, one manual turn (iter 6a) — replay, offline, $0: re-eval champion vs
+# challenger on the golden set (derived cassettes), strict gate, swap alias `champion` on a
+# challenger win, verify in the store (rule 8). Idempotent: a re-run after the swap is a no-op.
+# Needs `make up` + synced prompts (uv run python -m scripts.register_prompt) + golden (dvc pull).
+promote:
+	uv run python -m app.cli.promote
 
 # Control-plane backends (MLflow :5050, Phoenix :6006).
 up:

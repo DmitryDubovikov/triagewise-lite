@@ -5,7 +5,7 @@ support tickets for a fictional SaaS (*Driftwood*). The app is a fixture; **the 
 product** — prompt registry, CI eval-gates, online evaluation, drift monitoring, and a
 continuous-evaluation loop. See `CLAUDE.md` (constitution) and `ROADMAP.md` (iteration backbone).
 
-## Quickstart (through iter 5b — online LLM-as-judge)
+## Quickstart (through iter 6a — champion/challenger promotion loop)
 
 ```bash
 uv sync --extra dev
@@ -41,6 +41,13 @@ make drift-report               # DRIFT: new categories in 'postrelease': automa
 make judge                      # ⚠️ live, costs money
 make judge-report               # verdict counts from Phoenix's store; exit 0 = judged spans exist
 
+# Promotion loop, one manual turn (iter 6a): both prompt aliases are scored on the golden set
+# (replay/$0 on derived cassettes), the strict gate compares them, and on a challenger win the
+# `champion` alias swaps to its version in the registry — verified in the store, not the UI.
+# Idempotent: after the swap a re-run finds no strict winner and is a no-op. Needs data/golden.jsonl
+# (`uv run dvc pull`). The running triage picks the new champion up on its next call — no restart.
+make promote
+
 # The CI eval gate (iter 2): promptfoo replays recorded outputs over the golden set — $0, no key.
 nvm use                         # Node version pinned in .nvmrc (promptfoo needs >=22.22)
 npm ci                          # project-local promptfoo, pinned by package-lock.json
@@ -57,7 +64,8 @@ from the DVC-versioned golden set), `make eval-record` (⚠️ live, costs money
 `make traffic` (both ticket batches through triage, traced to Phoenix, replay/$0),
 `make drift-report` (drift verdict from Phoenix's span store; exit 0 = drift caught),
 `make judge` (⚠️ live, costs money — LLM-as-judge over sampled traced spans, incremental),
-`make judge-report` (judge verdicts from Phoenix's store; exit 0 = judged spans exist).
+`make judge-report` (judge verdicts from Phoenix's store; exit 0 = judged spans exist),
+`make promote` (champion/challenger promotion loop over the golden set, replay/$0, idempotent).
 
 The golden set (`data/golden.jsonl`, 40 labeled tickets) is DVC-versioned: `uv run dvc pull`
 restores it from the local dir remote (`../triagewise-lite-dvc-remote`).

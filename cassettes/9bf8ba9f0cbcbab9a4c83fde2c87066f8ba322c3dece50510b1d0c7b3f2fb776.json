@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Read-only access for a client\n\nWe'd like an external client to watch progress on one specific board without being able to edit anything or see our other projects. What's the right way to set that up?",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"how_to\",\"priority\":\"low\",\"sentiment\":\"neutral\",\"needs_human\":false,\"draft_reply\":\"Thanks for reaching out about how to \u2014 we're on it and will follow up shortly.\"}"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Can't log in after enabling 2FA\n\nI turned on two-factor authentication yesterday and now every code from my authenticator app is rejected. I've tried re-syncing the clock on my phone. I'm locked out of all my boards.",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"account_access\",\"priority\":\"high\",\"sentiment\":\"negative\",\"needs_human\":false,\"draft_reply\":\"Thanks for reaching out about account access \u2014 we're on it and will follow up shortly.\"}"
+  }
+}

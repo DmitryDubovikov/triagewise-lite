@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences. Watch for tickets that are polite on the surface but negative underneath, and for ambiguous categories \u2014 escalate (needs_human=true) when unsure.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Exporting all workspace data\n\nBefore our security review I need a full export of everything in our workspace \u2014 tasks, comments, attachments. Is there a single button for that or do I export project by project?",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"how_to\",\"priority\":\"low\",\"sentiment\":\"neutral\",\"needs_human\":false,\"draft_reply\":\"Thanks for reaching out about how to \u2014 we're on it and will follow up shortly.\"}"
+  }
+}

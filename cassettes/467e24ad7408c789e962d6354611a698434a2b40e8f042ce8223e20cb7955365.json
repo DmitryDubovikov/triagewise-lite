@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Logged out every few minutes\n\nThe app keeps logging me out roughly every five minutes, on both Chrome and Firefox. Re-entering my password constantly makes it impossible to get anything done.",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"account_access\",\"priority\":\"high\",\"sentiment\":\"negative\",\"needs_human\":false,\"draft_reply\":\"Thanks for reaching out about account access \u2014 we're on it and will follow up shortly.\"}"
+  }
+}

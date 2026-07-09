@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences. Watch for tickets that are polite on the surface but negative underneath, and for ambiguous categories \u2014 escalate (needs_human=true) when unsure.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Payment keeps failing but the bank sees nothing wrong\n\nRenewal payment has been declined three times this week. I called the bank and they say no attempt was even registered on their side. Card works everywhere else.",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"billing\",\"priority\":\"high\",\"sentiment\":\"negative\",\"needs_human\":false,\"draft_reply\":\"Thanks for reaching out about billing \u2014 we're on it and will follow up shortly.\"}"
+  }
+}

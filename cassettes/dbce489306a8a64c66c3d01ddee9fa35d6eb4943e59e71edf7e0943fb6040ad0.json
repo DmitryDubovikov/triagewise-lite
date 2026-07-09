@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Setting WIP limits on board columns\n\nI saw a screenshot where a column showed '3/5' next to its name. How do I set a work-in-progress limit like that on my own board columns?",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"how_to\",\"priority\":\"low\",\"sentiment\":\"neutral\",\"needs_human\":false,\"draft_reply\":\"Thanks for reaching out about how to \u2014 we're on it and will follow up shortly.\"}"
+  }
+}

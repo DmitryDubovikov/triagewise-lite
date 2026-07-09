@@ -5,9 +5,11 @@ owns the registry; domain/workflow never import mlflow). The registry handle (Ml
 is opened here at the transport boundary and passed down as an argument — never a global.
 
 The chat templates below are the desired content for the champion/challenger roles. `sync_prompts`
-pushes them into the registry: a new version is created only when a template actually changes, so
-re-running is idempotent (no duplicate identical versions). The champion template is byte-identical
-to iter-0's inline prompt so the committed cassette key stays stable ($0, no re-record).
+seeds them into the registry idempotently: each template is registered at most once (matched
+against the store's existing versions), the challenger alias is code-owned, and the champion
+alias belongs to the promotion loop (iter 6a) once it exists — a re-sync never rolls a swap
+back. The champion template is byte-identical to iter-0's inline prompt so the committed
+cassette key stays stable ($0, no re-record).
 """
 
 from __future__ import annotations
@@ -45,8 +47,8 @@ _SYSTEM = (
 
 # Chat templates with {{subject}}/{{body}} placeholders (MLflow double-brace form).
 # champion: iter-0 prompt verbatim. challenger: a variant that flags the golden-set "jokers"
-# (polite-but-negative, ambiguous category) — a distinct version so champion != challenger is
-# demonstrable now; the actual promotion/swap is iter 6.
+# (polite-but-negative, ambiguous category) — the promotion loop (iter 6a, promotion_flow)
+# is what actually swaps the champion alias onto it.
 _USER = "Subject: {{subject}}\n\n{{body}}"
 
 TRIAGE_CHAMPION_TEMPLATE = [
@@ -76,45 +78,73 @@ def open_registry(settings: Settings | None = None) -> MlflowClient:
 
 
 def _current_version(client: MlflowClient, alias: str) -> PromptVersion | None:
-    """The prompt version the alias points at, or None if the prompt/alias doesn't exist yet.
-
-    Queries the store directly (not the cached load_prompt, whose cache is keyed only by the
-    prompt URI and would bleed across registries in a multi-registry process like the test suite).
-    """
+    """The prompt version the alias points at, or None if the prompt/alias doesn't exist yet."""
     from mlflow.exceptions import MlflowException
 
     try:
-        return client.get_prompt_version_by_alias(TRIAGE_PROMPT_NAME, alias)
+        return load_triage_prompt(client, alias)
     except MlflowException:
         return None
 
 
-def sync_prompts(client: MlflowClient) -> dict[str, SyncedPrompt]:
-    """Make the registry reflect the champion/challenger templates defined in code.
+def _all_versions(client: MlflowClient) -> list[PromptVersion]:
+    """Every stored version of the triage prompt ([] when the prompt doesn't exist yet)."""
+    from mlflow.exceptions import MlflowException
 
-    Idempotent: registers a new version only when a template differs from the one the alias
-    currently points at; otherwise it leaves versions untouched and just confirms the alias.
-    The single source of truth shared by the register script, the cassette author, and tests —
-    so the registered prompt that drives cassette keys can't drift between them.
+    try:
+        return list(client.search_prompt_versions(TRIAGE_PROMPT_NAME))
+    except MlflowException:
+        return []
+
+
+def sync_prompts(client: MlflowClient) -> dict[str, SyncedPrompt]:
+    """Seed the registry from the code templates — without fighting the promotion loop.
+
+    Idempotent: a template is registered at most once, matched against the store's existing
+    versions, so re-running never piles up duplicates. The challenger alias is code-owned and
+    always points at the challenger template. The champion alias is bootstrap-only: once it
+    exists it belongs to the promotion flow (iter 6a) — a re-sync neither rolls a swap back
+    nor registers a changed champion template (that would just dangle; new candidates enter
+    life as challengers). The single source of truth shared by the register script, the
+    cassette author, and tests — so the prompt that drives cassette keys can't drift.
     """
     desired = ((CHAMPION, TRIAGE_CHAMPION_TEMPLATE), (CHALLENGER, TRIAGE_CHALLENGER_TEMPLATE))
+    existing = _all_versions(client)
     synced: dict[str, SyncedPrompt] = {}
     for alias, template in desired:
         current = _current_version(client, alias)
-        if current is not None and current.template == template:
+        if alias == CHAMPION and current is not None:
             synced[alias] = SyncedPrompt(version=current.version, created=False)
             continue
-        pv = client.register_prompt(
-            name=TRIAGE_PROMPT_NAME, template=template, commit_message=f"sync {alias}"
-        )
-        client.set_prompt_alias(TRIAGE_PROMPT_NAME, alias, pv.version)
-        synced[alias] = SyncedPrompt(version=pv.version, created=True)
+        version = next((pv for pv in existing if pv.template == template), None)
+        created = version is None
+        if version is None:
+            version = client.register_prompt(
+                name=TRIAGE_PROMPT_NAME, template=template, commit_message=f"seed {alias}"
+            )
+        if current is None or current.version != version.version:
+            client.set_prompt_alias(TRIAGE_PROMPT_NAME, alias, version.version)
+        synced[alias] = SyncedPrompt(version=version.version, created=created)
     return synced
 
 
+def promote_challenger(client: MlflowClient, version: int) -> None:
+    """The swap of the promotion loop (iter 6a): point champion at the winning version.
+
+    Alias assignment is idempotent, and the strict gate upstream never picks a winner once
+    both aliases sit on the same version — so a re-run of the loop is a natural no-op.
+    """
+    client.set_prompt_alias(TRIAGE_PROMPT_NAME, CHAMPION, version)
+
+
 def load_triage_prompt(client: MlflowClient, alias: str) -> PromptVersion:
-    """Load the triage prompt version an alias points to (verify in the store, not the UI)."""
-    return client.load_prompt(f"prompts:/{TRIAGE_PROMPT_NAME}@{alias}")
+    """Load the prompt version an alias points at — fresh from the store on every call.
+
+    Deliberately not client.load_prompt: its cache is keyed by the prompt URI alone, so after
+    a promotion swap it would keep serving the pre-swap version (killing hot-reload, iter 6a),
+    and it bleeds across registries in a multi-registry process like the test suite.
+    """
+    return client.get_prompt_version_by_alias(TRIAGE_PROMPT_NAME, alias)
 
 
 def format_for_ticket(prompt: PromptVersion, ticket: Ticket) -> list[dict[str, Any]]:

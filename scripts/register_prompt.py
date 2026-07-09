@@ -3,10 +3,10 @@
     make up                 # MLflow server on localhost:5050
     python -m scripts.register_prompt
 
-Pushes the champion + challenger templates (defined in app/persistence/prompts.py) into the
-registry and points the aliases at them. Idempotent: a new version is created only when a
-template actually changed, so re-running does not pile up duplicate versions. Talks to the
-registry only — NO LLM call, so it costs nothing.
+Seeds the registry from the templates in app/persistence/prompts.py: the challenger alias is
+code-owned and follows the challenger template; the champion alias is bootstrap-only — once it
+exists it belongs to the promotion loop (iter 6a), so re-running never rolls a swap back and
+never piles up versions. Talks to the registry only — NO LLM call, so it costs nothing.
 """
 
 from __future__ import annotations

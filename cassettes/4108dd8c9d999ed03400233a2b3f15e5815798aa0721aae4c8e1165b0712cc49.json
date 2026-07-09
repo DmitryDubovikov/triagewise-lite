@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: DPA and data residency confirmation required before renewal\n\nOur legal department requires a signed Data Processing Agreement and written confirmation of where our data is hosted before they approve the subscription renewal next month. Who can provide these documents?",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"billing\",\"priority\":\"high\",\"sentiment\":\"positive\",\"needs_human\":false,\"draft_reply\":\"Thanks for reaching out about billing \u2014 we're on it and will follow up shortly.\"}"
+  }
+}

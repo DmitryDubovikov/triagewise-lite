@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences. Watch for tickets that are polite on the surface but negative underneath, and for ambiguous categories \u2014 escalate (needs_human=true) when unsure.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: API returns 500 on bulk task creation\n\nPOST /v2/tasks/bulk with more than ~200 items returns a 500 with no body. Smaller batches work. We're trying to migrate 10k tasks and this is a hard blocker for our launch tomorrow.",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"bug\",\"priority\":\"urgent\",\"sentiment\":\"negative\",\"needs_human\":true,\"draft_reply\":\"Sorry \u2014 a 500 on bulk creation blocking your launch is serious. I've escalated to the API team as urgent; in the meantime batches of 150 or fewer succeed reliably.\"}"
+  }
+}

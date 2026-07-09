@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences. Watch for tickets that are polite on the surface but negative underneath, and for ambiguous categories \u2014 escalate (needs_human=true) when unsure.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Demanding a full refund \u2014 48 hours\n\nAfter repeated data sync failures ruined two client deadlines, I am demanding a full refund of the last six months. If this is not resolved within 48 hours I will initiate a chargeback and file a complaint with consumer protection. This is your final notice.",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"billing\",\"priority\":\"urgent\",\"sentiment\":\"negative\",\"needs_human\":true,\"draft_reply\":\"Thanks for reaching out about billing \u2014 we're on it and will follow up shortly.\"}"
+  }
+}

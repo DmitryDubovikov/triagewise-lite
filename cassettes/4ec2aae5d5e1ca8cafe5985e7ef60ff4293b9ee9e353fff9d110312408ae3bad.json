@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Where's the full list of keyboard shortcuts?\n\nI keep discovering shortcuts by accident \u2014 just found out 'q' assigns a task to me, which is great. Is there a cheat sheet with all of them somewhere?",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"how_to\",\"priority\":\"low\",\"sentiment\":\"positive\",\"needs_human\":false,\"draft_reply\":\"Thanks for reaching out about how to \u2014 we're on it and will follow up shortly.\"}"
+  }
+}

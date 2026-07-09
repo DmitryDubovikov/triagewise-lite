@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Board with 2,000 tasks takes 30+ seconds to load\n\nOur main board has grown to about two thousand tasks and now takes over half a minute to render. Scrolling stutters too. Same on every machine in the office.",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"performance\",\"priority\":\"high\",\"sentiment\":\"negative\",\"needs_human\":false,\"draft_reply\":\"Thanks for reaching out about performance \u2014 we're on it and will follow up shortly.\"}"
+  }
+}

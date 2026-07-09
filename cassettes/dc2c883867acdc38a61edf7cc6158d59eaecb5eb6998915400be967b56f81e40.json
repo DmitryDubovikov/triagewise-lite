@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Offline mode for the mobile app\n\nI review my board on the subway every morning and the app is useless without a connection. Read-only offline access with sync on reconnect would already be enough.",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"feature_request\",\"priority\":\"low\",\"sentiment\":\"neutral\",\"needs_human\":false,\"draft_reply\":\"Thanks for reaching out about feature request \u2014 we're on it and will follow up shortly.\"}"
+  }
+}

@@ -22,7 +22,8 @@
 | **4** ✅ | — *(semantic cache поверх access-layer)* | **Productionized routing + semantic caching** | **semantic cache** поверх готового access-layer (iter 3): повтор/близкий запрос → **hit** без сетевого вызова; метрика hit-rate; промах → нормальный `route`-путь (кассеты `replay`-нейтральны) | — (надстройка над iter 3) |
 | **5a** ✅ | **Arize Phoenix** | **LLM output drift / quality monitoring** | Phoenix в Compose + трейсинг триажа; вторая («пострелизная») пачка → **Phoenix показывает дрейф** распределения категорий; drift-report через Phoenix API (не UI); всё в `replay` ($0) | новый |
 | **5b** ✅ | — *(Phoenix, углублённо)* | **Online evaluation / LLM-as-judge в проде** | сэмплинг трафика → **online LLM-as-judge** (`smart`-тир, live-гейт); оценки judge видны в Phoenix рядом с трейсами | — (надстройка над 5a) |
-| **6** | — *(петля замыкается, Prefect)* | **Continuous evaluation loop** (LLM-аналог continuous training) | Prefect по расписанию: re-eval `challenger` на golden → **gate** (challenger > champion?) → **swap alias `champion`** → access-layer **hot-reload**. Запускаю flow с лучшим challenger → alias переезжает на новую версию (**verify в MLflow-реестре**) | Prefect из sentiment |
+| **6a** ✅ | — *(петля вручную)* | **Champion/challenger промоушен промптов — замыкание (CD для промптов): eval → gate → swap → hot-reload** | derived-кассеты: golden × оба промпта ($0 — фабрикация из expected-меток; champion ошибается на джокерах, challenger детерминированно побеждает); `make promote` (replay): score champion vs challenger на golden → **gate** (challenger > champion?) → **swap alias `champion`** (**verify в MLflow-реестре**, не UI) → access-layer **hot-reload** (живой процесс берёт новую версию без рестарта); повторный прогон = no-op (alias не дрейфует, версии не плодятся) | — (замыкает iter 1/2) |
+| **6b** | — *(Prefect)* | **Continuous evaluation loop** (LLM-аналог continuous training) | Prefect-flow оборачивает петлю 6a + расписание (lib, in-process serve — не dockerized-сервер): flow по расписанию гоняет re-eval → gate → swap; запуск с лучшим challenger → alias переезжает на новую версию (**verify в MLflow-реестре**) | Prefect из sentiment |
 | **7** *(опц. хвост)* | на выбор | усиление красной нити | guardrails-фреймворк / feedback-collection UI (Chainlit reuse) / cost-budget alerting / MLX local tail | — |
 
 ## Контроль красной нити (анти-дрейф)
@@ -36,12 +37,12 @@
 | Резюме-практика (CLAUDE.md) | Где демонстрируется |
 |---|---|
 | LLMOps / LLM lifecycle management | весь проект (зонт) |
-| Prompt-as-artifact + champion/challenger промоушен | iter 1, 6 |
+| Prompt-as-artifact + champion/challenger промоушен | iter 1, 6a |
 | CI eval-gate / regression testing | iter 2 |
 | Online eval / LLM-as-judge в проде | iter 5b |
 | LLM output drift / quality monitoring | iter 5a |
 | Cost & latency SLO (LLM FinOps) | iter 3 |
-| Continuous evaluation loop | iter 6 |
+| Continuous evaluation loop | iter 6b |
 | Productionized routing + semantic caching | iter 3, 4 |
 
 ## Бюджет / стоимость

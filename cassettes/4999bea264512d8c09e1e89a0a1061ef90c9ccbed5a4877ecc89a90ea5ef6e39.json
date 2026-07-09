@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences. Watch for tickets that are polite on the surface but negative underneath, and for ambiguous categories \u2014 escalate (needs_human=true) when unsure.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Archived project's board is just gone\n\nI archived a project expecting to restore it later, but the board doesn't show up under Archived anywhere. It had two years of tasks. Please tell me this data isn't lost.",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"bug\",\"priority\":\"urgent\",\"sentiment\":\"negative\",\"needs_human\":true,\"draft_reply\":\"Thanks for reaching out about bug \u2014 we're on it and will follow up shortly.\"}"
+  }
+}

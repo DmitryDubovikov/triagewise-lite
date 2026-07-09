@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Small question about the export format (third try)\n\nHope you're having a good week! Just a small thing \u2014 I asked twice before about why exported dates are in US format regardless of workspace locale, and haven't heard back. I'm sure you're busy, but it's starting to feel like these emails go into a void. Could someone take a look?",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"how_to\",\"priority\":\"medium\",\"sentiment\":\"neutral\",\"needs_human\":false,\"draft_reply\":\"Thanks for reaching out about how to \u2014 we're on it and will follow up shortly.\"}"
+  }
+}

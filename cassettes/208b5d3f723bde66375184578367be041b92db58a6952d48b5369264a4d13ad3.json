@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences. Watch for tickets that are polite on the surface but negative underneath, and for ambiguous categories \u2014 escalate (needs_human=true) when unsure.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Just wanted to say the new dark mode looks fantastic\n\nNo issue here at all! The team rolled out dark mode and it's gorgeous. Keep up the great work. Maybe mention this to the designer.",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"feature_request\",\"priority\":\"low\",\"sentiment\":\"positive\",\"needs_human\":false,\"draft_reply\":\"Thank you so much \u2014 made our day! I've passed your note along to the design team.\"}"
+  }
+}

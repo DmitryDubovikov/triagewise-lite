@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Duplicate notifications for every comment\n\nSince Tuesday I get two identical email notifications for each new comment. My inbox is a mess. Toggling notification settings off and on didn't help.",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"bug\",\"priority\":\"medium\",\"sentiment\":\"negative\",\"needs_human\":false,\"draft_reply\":\"Thanks for reaching out about bug \u2014 we're on it and will follow up shortly.\"}"
+  }
+}

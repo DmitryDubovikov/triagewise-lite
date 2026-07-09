@@ -1,0 +1,16 @@
+{
+  "messages": [
+    {
+      "content": "You triage Driftwood (a SaaS task-tracker) support tickets. Reply with ONLY a JSON object with keys: category (string), priority (low|medium|high|urgent), sentiment (negative|neutral|positive), needs_human (boolean), draft_reply (string). No prose, no code fences.",
+      "role": "system"
+    },
+    {
+      "content": "Subject: Webhooks stopped firing yesterday\n\nOur webhook endpoint hasn't received a single event since yesterday around 15:00 UTC. Nothing changed on our side and the endpoint responds fine to test pings. The integration our workflow depends on is down.",
+      "role": "user"
+    }
+  ],
+  "model": "gpt-4.1-nano-2025-04-14",
+  "response": {
+    "content": "{\"category\":\"bug\",\"priority\":\"high\",\"sentiment\":\"negative\",\"needs_human\":false,\"draft_reply\":\"Thanks for reaching out about bug \u2014 we're on it and will follow up shortly.\"}"
+  }
+}
