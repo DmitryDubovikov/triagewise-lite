@@ -10,7 +10,7 @@ continuous-evaluation loop. See `CLAUDE.md` (constitution) and `ROADMAP.md` (ite
 ```bash
 uv sync --extra dev
 cp .env.example .env            # defaults are fine for offline use
-make up                         # control-plane backends: MLflow at localhost:5050, Phoenix at localhost:6006
+make up                         # control-plane backends: MLflow :5050, Phoenix :6006, Prefect :4200
 
 # Register the triage prompt as a versioned artifact with champion/challenger aliases.
 # Talks to the registry only — no LLM call, costs nothing.
@@ -48,16 +48,23 @@ make judge-report               # verdict counts from Phoenix's store; exit 0 = 
 # (`uv run dvc pull`). The running triage picks the new champion up on its next call — no restart.
 make promote
 
+# Continuous-evaluation loop (iter 6b): the same promotion turn, now on a Prefect schedule
+# instead of a hand. `make loop` registers a flow + interval schedule on the Compose Prefect
+# server and serves it as a host runner — every LOOP_INTERVAL_SECONDS (default 60) a tick
+# reruns eval -> gate -> swap (replay/$0). Long-running; Ctrl-C stops the runner. Verify the
+# swap in the MLflow store, not the Prefect UI. Needs `make up` + synced prompts + golden.
+LOOP_INTERVAL_SECONDS=15 make loop      # leave running; watch ticks, Ctrl-C to stop
+
 # The CI eval gate (iter 2): promptfoo replays recorded outputs over the golden set — $0, no key.
 nvm use                         # Node version pinned in .nvmrc (promptfoo needs >=22.22)
 npm ci                          # project-local promptfoo, pinned by package-lock.json
 make eval                       # red if the prompt regressed / outputs weren't re-recorded
 
 make check                      # ruff + format + mypy + pytest (static gate, no LLM)
-make down                       # stop MLflow + Phoenix
+make down                       # stop MLflow + Phoenix + Prefect
 ```
 
-Make targets: `make check` (lint+types+tests), `make up`/`make down` (MLflow + Phoenix), `make test`,
+Make targets: `make check` (lint+types+tests), `make up`/`make down` (MLflow + Phoenix + Prefect), `make test`,
 `make fmt`, `make eval` (CI eval gate, offline replay), `make eval-build` (regenerate `eval/` assets
 from the DVC-versioned golden set), `make eval-record` (⚠️ live, costs money — re-records
 `eval/outputs.json`), `make cache-stats` (semantic-cache hit-rate over the SLO log),
@@ -65,7 +72,9 @@ from the DVC-versioned golden set), `make eval-record` (⚠️ live, costs money
 `make drift-report` (drift verdict from Phoenix's span store; exit 0 = drift caught),
 `make judge` (⚠️ live, costs money — LLM-as-judge over sampled traced spans, incremental),
 `make judge-report` (judge verdicts from Phoenix's store; exit 0 = judged spans exist),
-`make promote` (champion/challenger promotion loop over the golden set, replay/$0, idempotent).
+`make promote` (champion/challenger promotion loop over the golden set, replay/$0, idempotent),
+`make loop` (the promotion loop on a Prefect interval schedule — continuous evaluation, replay/$0,
+long-running; Ctrl-C to stop).
 
 The golden set (`data/golden.jsonl`, 40 labeled tickets) is DVC-versioned: `uv run dvc pull`
 restores it from the local dir remote (`../triagewise-lite-dvc-remote`).

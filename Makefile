@@ -1,4 +1,4 @@
-.PHONY: check up down test fmt eval eval-build eval-record cache-stats traffic drift-report judge judge-report promote
+.PHONY: check up down test fmt eval eval-build eval-record cache-stats traffic drift-report judge judge-report promote loop
 
 # promptfoo hygiene: telemetry/update pings off. Note: promptfoo's own cache hashes the
 # whole request INCLUDING the API key, so a committed cache can't replay keyless in CI —
@@ -90,9 +90,28 @@ judge-report:
 promote:
 	uv run python -m app.cli.promote
 
-# Control-plane backends (MLflow :5050, Phoenix :6006).
+# Prefect hygiene (iter 6b), same posture as PROMPTFOO_ENV: client state stays
+# project-local (./.prefect, gitignored), the runner talks to the Compose server (schedules
+# are server-side in Prefect 3), and analytics stay off even if a client ever falls back to
+# an ephemeral API. EXTRA_LOGGERS=app: ticks run in a runner subprocess where prefect owns
+# logging (root=WARNING) — this hands app.* loggers to prefect so the access-layer SLO
+# lines (tier+cost, iter 3) stay visible in flow-run logs instead of vanishing.
+PREFECT_ENV = PREFECT_HOME=$(PWD)/.prefect PREFECT_API_URL=http://localhost:4200/api \
+	PREFECT_SERVER_ANALYTICS_ENABLED=false PREFECT_LOGGING_EXTRA_LOGGERS=app
+
+# Continuous-evaluation loop (iter 6b) — replay, offline, $0: serve() registers the flow +
+# interval schedule on the Compose Prefect server and polls for the ticks it creates every
+# LOOP_INTERVAL_SECONDS (default 60); each tick reruns the 6a promotion turn on the host.
+# Ctrl-C stops the runner; the server-side schedule keeps ticking, so unserved runs just
+# queue as Scheduled/Late — harmless here because every promotion tick is idempotent (post-
+# swap it's a no-op: alias doesn't drift, versions don't pile), so a backlog changes nothing
+# in the store. Needs `make up` + synced prompts + golden (dvc pull), like `make promote`.
+loop:
+	$(PREFECT_ENV) uv run python -m app.cli.loop
+
+# Control-plane backends (MLflow :5050, Phoenix :6006, Prefect :4200).
 up:
-	docker compose up -d mlflow phoenix
+	docker compose up -d mlflow phoenix prefect
 
 down:
 	docker compose down

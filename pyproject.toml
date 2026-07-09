@@ -24,6 +24,11 @@ dependencies = [
     # like promptfoo), so it's live-gated; lazily imported, replay/CI never load it. Its
     # OpenAI client is the openai SDK already present via litellm. Pin in uv.lock.
     "arize-phoenix-evals>=3.1,<4",
+    # Prefect (iter 6b) — scaffolding from sentiment-mlops, not a new tool. The lib side:
+    # @flow + the serve()-runner executing ticks on the host; the scheduler lives in the
+    # Compose prefect service (scheduling is server-side in Prefect 3 — see tech-decisions).
+    # Client state stays under ./.prefect (gitignored). Pin in uv.lock.
+    "prefect>=3,<4",
 ]
 
 [project.optional-dependencies]

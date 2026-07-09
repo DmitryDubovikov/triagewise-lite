@@ -50,6 +50,10 @@ class Settings(BaseSettings):
     # deterministic per ticket_id, so the same traffic always picks the same spans.
     judge_sample_rate: float = 0.5
 
+    # Continuous-evaluation loop (iter 6b): how often the Prefect schedule reruns the
+    # promotion turn. Short by design — the demo shouldn't wait minutes for a tick.
+    loop_interval_seconds: int = 60
+
     # Paths and control-plane endpoints.
     tiers_path: Path = _ROOT / "llm-tiers.yaml"
     llm_log_path: Path = _ROOT / "logs" / "llm_calls.jsonl"

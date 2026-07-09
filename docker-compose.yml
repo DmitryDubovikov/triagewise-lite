@@ -30,3 +30,19 @@ services:
       - PHOENIX_WORKING_DIR=/mnt/data
     volumes:
       - ./phoenix-data:/mnt/data
+
+  # Continuous-evaluation schedule (iter 6b): deployments + the interval scheduler live here —
+  # in Prefect 3 scheduling is strictly server-side (the ephemeral/in-process API deliberately
+  # ships without the scheduler service). Flows still EXECUTE on the host: `make loop` runs the
+  # serve()-runner that polls this API and executes ticks in the uv env, so the container never
+  # runs triage and never reaches OpenAI (execution boundary). Tag pinned to the lib version.
+  prefect:
+    image: prefecthq/prefect:3.7.8-python3.12
+    ports:
+      - "4200:4200"
+    environment:
+      - PREFECT_HOME=/data
+      - PREFECT_SERVER_ANALYTICS_ENABLED=false
+    volumes:
+      - ./prefect-data:/data
+    command: prefect server start --host 0.0.0.0 --port 4200

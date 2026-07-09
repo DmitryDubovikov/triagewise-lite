@@ -61,21 +61,26 @@ GOLDEN = [
 ]
 
 
+def seed_registry(settings: Settings):
+    """Synced sqlite registry + cassettes for both prompts over the inline golden set,
+    authored through the exact recipe the committed cassettes come from (one rule, one
+    home) — shared with the loop suite (test_loop), which builds its Settings via env."""
+    client = open_registry(settings)
+    sync_prompts(client)
+    model = resolve_model(settings.triage_tier, settings.tiers_path)
+    write_cassettes(client, build_jobs([], {}, GOLDEN), model, settings.cassettes_dir)
+    return client
+
+
 @pytest.fixture
 def loop_env(tmp_path: Path):
-    """Synced sqlite registry + cassettes for both prompts over the inline golden set,
-    authored through the exact recipe the committed cassettes come from (one rule, one home)."""
     settings = Settings(
         llm_mode="replay",
         mlflow_tracking_uri=f"sqlite:///{tmp_path / 'reg.db'}",
         cassettes_dir=tmp_path / "cassettes",
         llm_log_path=tmp_path / "llm_calls.jsonl",
     )
-    client = open_registry(settings)
-    sync_prompts(client)
-    model = resolve_model(settings.triage_tier, settings.tiers_path)
-    write_cassettes(client, build_jobs([], {}, GOLDEN), model, settings.cassettes_dir)
-    return client, settings
+    return seed_registry(settings), settings
 
 
 def test_score_triage_counts_matched_label_fields():

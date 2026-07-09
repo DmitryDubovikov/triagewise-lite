@@ -17,12 +17,16 @@ eval/.promptfoo-cache/
 # Env / secrets
 .env
 
-# MLflow / Phoenix / Docker local state (mounted volumes)
+# MLflow / Phoenix / Prefect Docker local state (mounted volumes)
 mlflow-data/
 phoenix-data/
+prefect-data/
 # Stray local sqlite if a client ever runs against the default URI instead of Settings.
 /mlflow.db
 /mlruns/
 
 # Access-layer SLO log (runtime artifact, iter 3)
 logs/
+
+# Prefect client-side state (iter 6b) — kept project-local so the host stays clean.
+.prefect/
