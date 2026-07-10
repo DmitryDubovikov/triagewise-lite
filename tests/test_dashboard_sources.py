@@ -11,7 +11,7 @@ from app.config import Settings
 from app.llm.slo import CallRecord
 from app.observability.phoenix import batch_category_rows
 from app.persistence.promotion_log import PromotionRecord, last_promotion, log_promotion
-from app.ui.sources import parse_loop_status, slo_summary
+from app.ui.sources import parse_loop_status, slo_summary, summarize_judge
 
 
 def make_promotion(**overrides) -> PromotionRecord:
@@ -68,18 +68,40 @@ def test_slo_summary_aggregates_and_skips_garbage(tmp_path: Path):
         make_call(
             cache="miss", cost_usd=0.002, slo_breaches=["latency 9ms > 1ms"]
         ).model_dump_json(),
+        # a real network call — the only one that should count toward the live cost/latency averages
+        make_call(mode="live", latency_ms=400.0, cost_usd=0.0001).model_dump_json(),
     ]
     path.write_text("\n".join(lines) + "\n")
     summary = slo_summary(path)
-    assert summary.calls == 2 and summary.total_cost_usd == 0.003
+    assert summary.calls == 3 and summary.total_cost_usd == 0.0031
     assert summary.breached_calls == 1
     assert summary.cache_hits == 1 and summary.cache_misses == 1
-    assert summary.last_call is not None and summary.last_call.cache == "miss"
+    assert summary.live_calls == 1
+    assert summary.avg_live_latency_ms == 400.0 and summary.avg_live_cost_usd == 0.0001
+    assert summary.last_call is not None and summary.last_call.mode == "live"
 
 
 def test_slo_summary_empty_without_log(tmp_path: Path):
     summary = slo_summary(tmp_path / "absent.jsonl")
     assert summary.calls == 0 and summary.last_call is None
+
+
+def test_summarize_judge_means_scores_and_tallies_labels():
+    spans = [{"a": 1}, {"a": 2}, {"a": 3}]  # 3 traced, only 2 judged
+    annotations = [
+        {"span_id": "s1", "result": {"label": "correct", "score": 1.0}},
+        {"span_id": "s2", "result": {"label": "incorrect", "score": 0.0}},
+    ]
+    summary = summarize_judge(spans, annotations)
+    assert summary.traced == 3 and summary.judged == 2
+    assert summary.mean_score == 0.5
+    assert summary.labels == {"correct": 1, "incorrect": 1}
+
+
+def test_summarize_judge_handles_no_verdicts():
+    summary = summarize_judge([{"a": 1}], [])
+    assert summary.traced == 1 and summary.judged == 0
+    assert summary.mean_score is None and summary.labels == {}
 
 
 def test_batch_category_rows_keeps_only_complete_spans():

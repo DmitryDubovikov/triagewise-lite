@@ -12,6 +12,7 @@ the httpx I/O for the same reason.
 
 from __future__ import annotations
 
+from collections import Counter
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple
 
@@ -22,6 +23,7 @@ from app.observability.phoenix import (
     BASELINE_BATCH,
     CANDIDATE_BATCH,
     batch_category_rows,
+    fetch_judge_annotations,
     fetch_triage_spans,
 )
 from app.persistence.jsonl import iter_records
@@ -61,19 +63,53 @@ def drift_status(client: Client, settings: Settings) -> DriftStatus | None:
     return DriftStatus(report=report, observations=len(rows), truncated=truncated)
 
 
+class JudgeSummary(NamedTuple):
+    traced: int  # traced triage spans available to be judged
+    judged: int  # spans the online judge has annotated (sampled, incremental)
+    mean_score: float | None  # mean triage_quality — None until something is judged
+    labels: dict[str, int]  # correct / incorrect counts
+
+
+def summarize_judge(spans: list[Any], annotations: list[Any]) -> JudgeSummary:
+    """Distill the judge's span annotations into one card — the online-LLM-as-judge quality
+    signal (5b), read back from Phoenix (rule 8). Pure over the two store answers so it stays
+    plain-pytest testable, like parse_loop_status."""
+    results = [a.get("result") or {} for a in annotations]
+    scores = [r["score"] for r in results if isinstance(r.get("score"), int | float)]
+    labels = Counter(r["label"] for r in results if r.get("label"))
+    mean = round(sum(scores) / len(scores), 3) if scores else None
+    return JudgeSummary(len(spans), len(annotations), mean, dict(labels))
+
+
+def judge_summary(client: Client, settings: Settings) -> JudgeSummary | None:
+    """Judge quality over traced spans — None when no traffic is traced yet; judged=0 when
+    traffic exists but `make judge` (live) has not run."""
+    spans, _ = fetch_triage_spans(client, settings)
+    if not spans:
+        return None
+    return summarize_judge(spans, fetch_judge_annotations(client, settings, spans))
+
+
 class SloSummary(NamedTuple):
     calls: int
     total_cost_usd: float
     breached_calls: int  # calls that violated at least one SLO threshold
     cache_hits: int
     cache_misses: int
+    live_calls: int  # real network calls (mode live/record) — the ones with true cost & latency
+    avg_live_latency_ms: float  # mean latency over the real calls (replay is ~0ms, so excluded)
+    avg_live_cost_usd: float  # mean dollar cost over the real calls
     last_call: CallRecord | None
 
 
 def slo_summary(path: Path) -> SloSummary:
-    """Aggregate the per-call SLO log (iter 3/4); unparseable lines are skipped (iter_records)."""
-    calls = breaches = hits = misses = 0
-    cost = 0.0
+    """Aggregate the per-call SLO log (iter 3/4); unparseable lines are skipped (iter_records).
+
+    Cost and latency are split out for the real (live/record) calls: replay reads a cassette in
+    ~0ms for $0, so an average over the whole log would drown the true figures — the real calls
+    are the ones that carry a meaningful cost & latency."""
+    calls = breaches = hits = misses = live = 0
+    cost = live_latency = live_cost = 0.0
     last: CallRecord | None = None
     for record in iter_records(path, CallRecord):
         calls += 1
@@ -81,8 +117,16 @@ def slo_summary(path: Path) -> SloSummary:
         breaches += bool(record.slo_breaches)
         hits += record.cache == "hit"
         misses += record.cache == "miss"
+        if record.mode in ("live", "record"):
+            live += 1
+            live_latency += record.latency_ms
+            live_cost += record.cost_usd
         last = record
-    return SloSummary(calls, round(cost, 6), breaches, hits, misses, last)
+    avg_latency = round(live_latency / live, 1) if live else 0.0
+    avg_cost = round(live_cost / live, 6) if live else 0.0
+    return SloSummary(
+        calls, round(cost, 6), breaches, hits, misses, live, avg_latency, avg_cost, last
+    )
 
 
 class LoopStatus(NamedTuple):

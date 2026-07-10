@@ -19,11 +19,30 @@ from app.config import LOOP_DEPLOYMENT, LOOP_FLOW, get_settings
 from app.observability.phoenix import CANDIDATE_BATCH
 from app.persistence.promotion_log import last_promotion
 from app.persistence.prompts import TRIAGE_PROMPT_NAME, open_registry
-from app.ui.sources import drift_status, fetch_loop_status, prompt_statuses, slo_summary
+from app.ui.sources import (
+    drift_status,
+    fetch_loop_status,
+    judge_summary,
+    prompt_statuses,
+    slo_summary,
+)
 
 settings = get_settings()
 
 st.set_page_config(page_title="triagewise control plane", page_icon="🗼", layout="wide")
+st.markdown(
+    # Nudge the small type up a notch for readability — metric labels and the grey card captions
+    # are the smallest text on the panel.
+    """
+    <style>
+      [data-testid="stMetricLabel"], [data-testid="stMetricLabel"] p { font-size: 1.05rem; }
+      [data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p,
+      .stCaption, .stCaption p { font-size: 1rem; line-height: 1.5; }
+      [data-testid="stCaptionContainer"] code, .stCaption code { font-size: 0.95rem; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 st.title("triagewise — LLMOps control plane")
 st.caption(
     "Read-only: every card is a fresh read of its store — MLflow registry, Phoenix spans, "
@@ -80,18 +99,33 @@ def render_drift() -> None:
         st.error(f"DRIFT: new in '{CANDIDATE_BATCH}': {', '.join(report.new_categories)}")
     else:
         st.success("no categorical drift between batches")
-    st.dataframe(
-        [
-            {"batch": batch, "category": category, "count": count}
-            for batch, counts in report.distributions.items()
-            for category, count in counts.items()
-        ],
-        hide_index=True,
-    )
+    # glance-level: traffic per batch — the full category breakdown lives in `make drift-report`
+    per_batch = {batch: sum(counts.values()) for batch, counts in report.distributions.items()}
+    for col, (batch, total) in zip(st.columns(len(per_batch)), per_batch.items(), strict=True):
+        col.metric(batch, total)
     st.caption(
         f"{status.observations} observations from Phoenix ({settings.phoenix_endpoint})"
         + (" · WARNING: page limit hit, sample truncated" if status.truncated else "")
     )
+
+
+def render_judge() -> None:
+    from phoenix.client import Client  # lazy: the store client opens at THIS boundary
+
+    summary = judge_summary(Client(base_url=settings.phoenix_endpoint), settings)
+    if summary is None:
+        st.info("no traced triage spans yet — run `make traffic`")
+        return
+    if summary.judged == 0:
+        st.info("no judge verdicts yet — run `make judge` (live, rule 4)")
+        return
+    quality, judged = st.columns(2)
+    quality.metric(
+        "quality (mean)", f"{summary.mean_score:.2f}" if summary.mean_score is not None else "—"
+    )
+    judged.metric("spans judged", f"{summary.judged}/{summary.traced}")
+    tally = " · ".join(f"{label} {count}" for label, count in summary.labels.items())
+    st.caption(f"online LLM-as-judge at the {settings.judge_tier} tier · {tally}")
 
 
 def render_slo() -> None:
@@ -99,18 +133,26 @@ def render_slo() -> None:
     if summary.calls == 0:
         st.info("no LLM calls logged yet — run `make promote` or `make traffic`")
         return
-    calls, cost, breaches, rate = st.columns(4)
+    calls, second, breaches, rate = st.columns(4)
     calls.metric("calls", summary.calls)
-    cost.metric("total cost", f"${summary.total_cost_usd:.4f}")
+    # Real cost & latency come from the live/record calls; replay reads a cassette in ~0ms/$0.
+    if summary.live_calls:
+        second.metric("latency / call", f"{summary.avg_live_latency_ms:.0f}ms")
+    else:
+        second.metric("cost budget", f"${settings.slo_max_cost_usd:g}")
     breaches.metric("breached calls", summary.breached_calls)
     cached = summary.cache_hits + summary.cache_misses
     rate.metric("cache hit-rate", f"{summary.cache_hits / cached:.0%}" if cached else "—")
-    last = summary.last_call
-    if last is not None:
+    budget = (
+        f"per-call budget ${settings.slo_max_cost_usd:g} / {settings.slo_max_latency_ms / 1000:g}s"
+    )
+    if summary.live_calls:
         st.caption(
-            f"last: {last.ts} · {last.tier}->{last.model} ({last.mode}) · "
-            f"{last.latency_ms:.0f}ms · ${last.cost_usd:.6f}"
+            f"{budget} · {summary.breached_calls} breaches · measured over {summary.live_calls} "
+            f"live calls: ${summary.avg_live_cost_usd:.6f}/call — replay reproduces them for $0"
         )
+    else:
+        st.caption(f"{budget} · {summary.breached_calls} breaches · replay spend ≈ $0 by design")
 
 
 def render_loop() -> None:
@@ -134,28 +176,33 @@ def render_loop() -> None:
 left, right = st.columns(2)
 with left:
     card(
-        "Prompt registry — champion/challenger (iter 1/6a)",
+        "Prompt registry — champion / challenger",
         render_prompts,
         "Is MLflow up (`make up`)? Seeded (`uv run python -m scripts.register_prompt`)?",
     )
     card(
-        "Drift monitor (iter 5a)",
+        "Drift monitor",
         render_drift,
         "Is Phoenix up (`make up`)? Traffic traced (`make traffic`)?",
     )
     card(
-        "Cost/latency SLO (iter 3/4)",
+        "Cost & latency SLO",
         render_slo,
         "The SLO log appears after any routed call — `make promote` or `make traffic`.",
     )
 with right:
     card(
-        "Promotion gate (iter 6a)",
+        "Promotion gate",
         render_gate,
         "The promotion log appears after a gate turn — `make promote` or `make loop`.",
     )
     card(
-        "Continuous-evaluation loop (iter 6b)",
+        "Judge quality",
+        render_judge,
+        "Is Phoenix up (`make up`)? Traffic traced (`make traffic`) and judged (`make judge`)?",
+    )
+    card(
+        "Continuous-evaluation loop",
         render_loop,
         "Is Prefect up (`make up`)? Runner started (`make loop`)?",
     )
