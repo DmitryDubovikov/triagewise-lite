@@ -24,7 +24,7 @@
 | **5b** ✅ | — *(Phoenix, углублённо)* | **Online evaluation / LLM-as-judge в проде** | сэмплинг трафика → **online LLM-as-judge** (`smart`-тир, live-гейт); оценки judge видны в Phoenix рядом с трейсами | — (надстройка над 5a) |
 | **6a** ✅ | — *(петля вручную)* | **Champion/challenger промоушен промптов — замыкание (CD для промптов): eval → gate → swap → hot-reload** | derived-кассеты: golden × оба промпта ($0 — фабрикация из expected-меток; champion ошибается на джокерах, challenger детерминированно побеждает); `make promote` (replay): score champion vs challenger на golden → **gate** (challenger > champion?) → **swap alias `champion`** (**verify в MLflow-реестре**, не UI) → access-layer **hot-reload** (живой процесс берёт новую версию без рестарта); повторный прогон = no-op (alias не дрейфует, версии не плодятся) | — (замыкает iter 1/2) |
 | **6b** ✅ | — *(Prefect)* | **Continuous evaluation loop** (LLM-аналог continuous training) | Prefect-flow оборачивает петлю 6a + расписание (Prefect server — Compose-сервис: в Prefect 3 scheduler строго серверный, ephemeral-режим его осознанно не гоняет; flow-runner `make loop` — на хосте): flow по расписанию гоняет re-eval → gate → swap; запуск с лучшим challenger → alias переезжает на новую версию (**verify в MLflow-реестре**) | Prefect из sentiment |
-| **7** *(опц. хвост)* | на выбор | усиление красной нити | guardrails-фреймворк / feedback-collection UI (Chainlit reuse) / cost-budget alerting / MLX local tail | — |
+| **7** ✅ *(опц. хвост)* | **Streamlit** *(рендер-вехикул, не резюме-строка)* | **усиление зонтика #1 — LLMOps / lifecycle management сделан легибельным** | **control-plane dashboard** (Streamlit — отдельный Compose-сервис, pinned image): одна **read-only** панель собирает 5 живых proof'ов жизненного цикла в один экран — `champion` версия+alias (MLflow-реестр), последний gate-вердикт (`run_promotion`), drift-статус (Phoenix API), cost/latency SLO (access-layer-лог), Prefect-петля (статус/интервал). Панель **только читает** сторы, не источник истины (**verify в сторе, не в UI — правило 8**); всё на replay ($0). В `docs` явно: Streamlit — рендер, героиня — видимый control plane, новой резюме-практики нет (честность против раздувания) | — (надстройка над iter 1–6b) |
 
 ## Контроль красной нити (анти-дрейф)
 
@@ -36,7 +36,7 @@
 
 | Резюме-практика (CLAUDE.md) | Где демонстрируется |
 |---|---|
-| LLMOps / LLM lifecycle management | весь проект (зонт) |
+| LLMOps / LLM lifecycle management | весь проект (зонт); **iter 7** — control-plane dashboard делает легибельным (5 proof'ов на одном экране) |
 | Prompt-as-artifact + champion/challenger промоушен | iter 1, 6a |
 | CI eval-gate / regression testing | iter 2 |
 | Online eval / LLM-as-judge в проде | iter 5b |

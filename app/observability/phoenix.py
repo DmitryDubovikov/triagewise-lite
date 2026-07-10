@@ -35,6 +35,11 @@ if TYPE_CHECKING:
 
 SPAN_NAME = "triage_ticket"
 
+# Batch labels `make traffic` stamps on spans — the two sides of the drift comparison (5a).
+# Shared by the drift report and the dashboard's drift card (iter 7).
+BASELINE_BATCH = "base"
+CANDIDATE_BATCH = "postrelease"
+
 # One page of spans — the shared ceiling for every span-store reader (judge flow, drift and
 # judge reports). At ~21 spans per `make traffic` it truncates only after ~47 runs; readers
 # warn loudly when they hit it. Pagination — if the store ever really grows.
@@ -50,6 +55,19 @@ def fetch_triage_spans(client: Client, settings: Settings) -> tuple[list[Any], b
         project_identifier=settings.phoenix_project, name=SPAN_NAME, limit=FETCH_LIMIT
     )
     return list(spans), len(spans) >= FETCH_LIMIT
+
+
+def batch_category_rows(spans: Iterable[Mapping[str, Any]]) -> list[tuple[str, str]]:
+    """(batch, category) observations for the drift decision (app/domain/drift.py), dropping
+    spans that don't carry both. The store dialect (flat dotted attribute keys) stays at this
+    seam — shared by the drift report script and the dashboard's drift card."""
+    rows: list[tuple[str, str]] = []
+    for span in spans:
+        attrs = span.get("attributes") or {}
+        batch, category = attrs.get("triage.batch"), attrs.get("triage.category")
+        if batch is not None and category is not None:
+            rows.append((str(batch), str(category)))
+    return rows
 
 
 def fetch_judge_annotations(client: Client, settings: Settings, spans: list[Any]) -> list[Any]:

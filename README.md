@@ -10,7 +10,8 @@ continuous-evaluation loop. See `CLAUDE.md` (constitution) and `ROADMAP.md` (ite
 ```bash
 uv sync --extra dev
 cp .env.example .env            # defaults are fine for offline use
-make up                         # control-plane backends: MLflow :5050, Phoenix :6006, Prefect :4200
+make up                         # backends: MLflow :5050, Phoenix :6006, Prefect :4200
+                                # + read-only control-plane dashboard at http://localhost:8501 (iter 7)
 
 # Register the triage prompt as a versioned artifact with champion/challenger aliases.
 # Talks to the registry only — no LLM call, costs nothing.
@@ -55,16 +56,21 @@ make promote
 # swap in the MLflow store, not the Prefect UI. Needs `make up` + synced prompts + golden.
 LOOP_INTERVAL_SECONDS=15 make loop      # leave running; watch ticks, Ctrl-C to stop
 
+# Control-plane dashboard (iter 7): one read-only screen at http://localhost:8501 collects the
+# five lifecycle proofs (champion/challenger versions, last gate verdict, drift, cost/latency
+# SLO, loop status). Comes up with `make up`; reads the stores only, writes nothing, no LLM.
+open http://localhost:8501         # or just visit it in a browser after `make up`
+
 # The CI eval gate (iter 2): promptfoo replays recorded outputs over the golden set — $0, no key.
 nvm use                         # Node version pinned in .nvmrc (promptfoo needs >=22.22)
 npm ci                          # project-local promptfoo, pinned by package-lock.json
 make eval                       # red if the prompt regressed / outputs weren't re-recorded
 
 make check                      # ruff + format + mypy + pytest (static gate, no LLM)
-make down                       # stop MLflow + Phoenix + Prefect
+make down                       # stop MLflow + Phoenix + Prefect + dashboard
 ```
 
-Make targets: `make check` (lint+types+tests), `make up`/`make down` (MLflow + Phoenix + Prefect), `make test`,
+Make targets: `make check` (lint+types+tests), `make up`/`make down` (MLflow + Phoenix + Prefect + dashboard), `make test`,
 `make fmt`, `make eval` (CI eval gate, offline replay), `make eval-build` (regenerate `eval/` assets
 from the DVC-versioned golden set), `make eval-record` (⚠️ live, costs money — re-records
 `eval/outputs.json`), `make cache-stats` (semantic-cache hit-rate over the SLO log),

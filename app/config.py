@@ -13,6 +13,12 @@ _ROOT = Path(__file__).resolve().parent.parent
 
 LLMMode = Literal["replay", "record", "live"]
 
+# Names the continuous-evaluation loop registers on the Prefect server (iter 6b). Shared from
+# this prefect-free home so the flow (app/cli/loop.py, imports prefect) and the dashboard's
+# REST reader (app/ui/sources.py, whose image has no prefect lib) can never drift apart.
+LOOP_FLOW = "continuous-evaluation"
+LOOP_DEPLOYMENT = "every-interval"
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
@@ -57,6 +63,9 @@ class Settings(BaseSettings):
     # Paths and control-plane endpoints.
     tiers_path: Path = _ROOT / "llm-tiers.yaml"
     llm_log_path: Path = _ROOT / "logs" / "llm_calls.jsonl"
+    # Gate-verdict trail (iter 7): every promotion turn appends one record here, so the
+    # dashboard can show the last verdict without re-running anything (it is read-only).
+    promotion_log_path: Path = _ROOT / "logs" / "promotions.jsonl"
     semantic_cache_path: Path = _ROOT / "logs" / "semantic_cache.jsonl"
     tickets_path: Path = _ROOT / "fixtures" / "tickets.jsonl"
     # Post-release ticket batch (iter 5a): introduces the new `automation` category so the
@@ -70,6 +79,9 @@ class Settings(BaseSettings):
     golden_path: Path = _ROOT / "data" / "golden.jsonl"
     eval_dir: Path = _ROOT / "eval"
     mlflow_tracking_uri: str = "http://localhost:5050"
+    # Prefect REST API (iter 7): the dashboard reads loop status over plain HTTP — the
+    # prefect lib itself never enters the panel's image. Same server `make loop` talks to.
+    prefect_api_url: str = "http://localhost:4200/api"
 
 
 @lru_cache

@@ -24,6 +24,10 @@ dependencies = [
     # like promptfoo), so it's live-gated; lazily imported, replay/CI never load it. Its
     # OpenAI client is the openai SDK already present via litellm. Pin in uv.lock.
     "arize-phoenix-evals>=3.1,<4",
+    # Dashboard sources (iter 7) read the Prefect REST API over plain httpx (the prefect lib
+    # never enters the panel's image). Already transitive via litellm/openai; declared because
+    # app code imports it. Pin in uv.lock.
+    "httpx>=0.27,<1",
     # Prefect (iter 6b) — scaffolding from sentiment-mlops, not a new tool. The lib side:
     # @flow + the serve()-runner executing ticks on the host; the scheduler lives in the
     # Compose prefect service (scheduling is server-side in Prefect 3 — see tech-decisions).
@@ -63,4 +67,10 @@ addopts = "-q -p no:phoenix"
 [[tool.mypy.overrides]]
 # mlflow ships no usable type stubs; the prompt-registry surface is exercised via tests.
 module = "mlflow.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# streamlit lives only in the dashboard image (dashboard/requirements.txt), not the uv env —
+# the render layer is exercised by the compose smoke at iteration close, not typechecked here.
+module = ["streamlit", "streamlit.*"]
 ignore_missing_imports = true

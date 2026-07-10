@@ -109,9 +109,11 @@ PREFECT_ENV = PREFECT_HOME=$(PWD)/.prefect PREFECT_API_URL=http://localhost:4200
 loop:
 	$(PREFECT_ENV) uv run python -m app.cli.loop
 
-# Control-plane backends (MLflow :5050, Phoenix :6006, Prefect :4200).
+# Control-plane backends (MLflow :5050, Phoenix :6006, Prefect :4200) + the read-only
+# dashboard (:8501, iter 7). --build: the dashboard image rebuilds when its Dockerfile/
+# requirements change and is a cheap cache no-op otherwise.
 up:
-	docker compose up -d mlflow phoenix prefect
+	docker compose up -d --build mlflow phoenix prefect dashboard
 
 down:
 	docker compose down

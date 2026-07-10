@@ -18,6 +18,7 @@ from app.domain.promotion import score_triage, should_promote
 from app.domain.triage import GoldenLabels, GoldenTicket, TriageResult
 from app.llm.cassettes import cassette_key, load
 from app.llm.tiers import resolve_model
+from app.persistence.promotion_log import last_promotion
 from app.persistence.prompts import (
     CHALLENGER,
     CHAMPION,
@@ -79,6 +80,7 @@ def loop_env(tmp_path: Path):
         mlflow_tracking_uri=f"sqlite:///{tmp_path / 'reg.db'}",
         cassettes_dir=tmp_path / "cassettes",
         llm_log_path=tmp_path / "llm_calls.jsonl",
+        promotion_log_path=tmp_path / "promotions.jsonl",
     )
     return seed_registry(settings), settings
 
@@ -117,6 +119,23 @@ def test_promotion_rerun_is_noop(loop_env):
     rerun = asyncio.run(run_promotion(client, GOLDEN, settings=settings))
     assert not rerun.promoted  # equal scores -> the strict gate keeps the incumbent
     assert load_triage_prompt(client, CHAMPION).version == promoted_version
+
+
+def test_promotion_turn_logs_verdict(loop_env):
+    """Every gate turn leaves one record in the promotion log (iter 7) — the read-only
+    dashboard's source for 'last gate verdict'. The log is a trail, not a registry: the
+    swap itself is still verified in the store above (rule 8)."""
+    client, settings = loop_env
+    asyncio.run(run_promotion(client, GOLDEN, settings=settings))
+    first = last_promotion(settings.promotion_log_path)
+    assert first is not None and first.promoted
+    assert first.golden_count == len(GOLDEN) and first.mode == "replay"
+    assert first.champion_version_after == first.challenger_version
+
+    asyncio.run(run_promotion(client, GOLDEN, settings=settings))  # post-swap no-op turn
+    rerun = last_promotion(settings.promotion_log_path)
+    assert rerun is not None and not rerun.promoted  # the trail shows the no-op too
+    assert len(settings.promotion_log_path.read_text().splitlines()) == 2
 
 
 def test_sync_after_promotion_does_not_roll_back(loop_env):

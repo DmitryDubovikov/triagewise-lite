@@ -11,11 +11,13 @@ loading is alias-fresh, any live process picks the new champion up on its next c
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, NamedTuple
 
 from app.config import Settings
 from app.domain.promotion import score_triage, should_promote
 from app.domain.triage import GoldenTicket
+from app.persistence.promotion_log import PromotionRecord, log_promotion
 from app.persistence.prompts import CHALLENGER, CHAMPION, load_triage_prompt, promote_challenger
 from app.workflow.triage_flow import triage_ticket
 
@@ -71,6 +73,22 @@ async def run_promotion(
     if promoted:
         promote_challenger(client, challenger.version)
     after = load_triage_prompt(client, CHAMPION).version
+    # Persist the verdict (iter 7): every turn leaves one record in the promotion log, so
+    # the read-only dashboard can tell the last gate story without re-running the loop.
+    log_promotion(
+        PromotionRecord(
+            ts=datetime.now(UTC).isoformat(timespec="milliseconds"),
+            champion_version=champion.version,
+            champion_score=champion.score,
+            challenger_version=challenger.version,
+            challenger_score=challenger.score,
+            promoted=promoted,
+            champion_version_after=after,
+            golden_count=len(golden),
+            mode=settings.llm_mode,
+        ),
+        settings,
+    )
     return PromotionReport(
         champion=champion, challenger=challenger, promoted=promoted, champion_version_after=after
     )

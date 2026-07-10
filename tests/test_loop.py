@@ -31,6 +31,7 @@ def flow_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         "MLFLOW_TRACKING_URI": f"sqlite:///{tmp_path / 'reg.db'}",
         "CASSETTES_DIR": str(tmp_path / "cassettes"),
         "LLM_LOG_PATH": str(tmp_path / "llm_calls.jsonl"),
+        "PROMOTION_LOG_PATH": str(tmp_path / "promotions.jsonl"),
         "GOLDEN_PATH": str(golden_path),
     }
     for key, value in env.items():

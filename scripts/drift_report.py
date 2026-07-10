@@ -14,10 +14,12 @@ import sys
 
 from app.config import get_settings
 from app.domain.drift import category_drift
-from app.observability.phoenix import fetch_triage_spans
-
-BASELINE = "base"
-CANDIDATE = "postrelease"
+from app.observability.phoenix import (
+    BASELINE_BATCH,
+    CANDIDATE_BATCH,
+    batch_category_rows,
+    fetch_triage_spans,
+)
 
 
 def main() -> int:
@@ -32,13 +34,7 @@ def main() -> int:
             file=sys.stderr,
         )
 
-    rows = []
-    for span in spans:
-        # phoenix.client returns attributes as one flat dict with dotted keys.
-        attrs = span.get("attributes") or {}
-        batch, category = attrs.get("triage.batch"), attrs.get("triage.category")
-        if batch is not None and category is not None:
-            rows.append((str(batch), str(category)))
+    rows = batch_category_rows(spans)
     if not rows:
         print(
             f"No traced triage spans with batch+category in project "
@@ -47,12 +43,15 @@ def main() -> int:
         )
         return 1
 
-    report = category_drift(rows, baseline=BASELINE, candidate=CANDIDATE)
+    report = category_drift(rows, baseline=BASELINE_BATCH, candidate=CANDIDATE_BATCH)
     print(report.model_dump_json(indent=2))
     if not report.drifted:
-        print(f"no categorical drift between '{BASELINE}' and '{CANDIDATE}'", file=sys.stderr)
+        print(
+            f"no categorical drift between '{BASELINE_BATCH}' and '{CANDIDATE_BATCH}'",
+            file=sys.stderr,
+        )
         return 1
-    print(f"DRIFT: new categories in '{CANDIDATE}': {', '.join(report.new_categories)}")
+    print(f"DRIFT: new categories in '{CANDIDATE_BATCH}': {', '.join(report.new_categories)}")
     return 0
 
 

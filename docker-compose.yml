@@ -46,3 +46,22 @@ services:
     volumes:
       - ./prefect-data:/data
     command: prefect server start --host 0.0.0.0 --port 4200
+
+  # Control-plane dashboard (iter 7): one read-only Streamlit page collecting the five
+  # lifecycle proofs. Reads MLflow/Phoenix/Prefect over the compose network; the host JSONL
+  # logs (SLO, promotions) come in through a read-only mount — the documented exception to
+  # "no shared FS" (a render of append-only logs, not an artifact path; nothing is written
+  # back). ./app is mounted read-only too, so the panel always renders the working tree.
+  # The container never reaches OpenAI: the panel is not on the LLM path (egress stays
+  # host-only, rule 5 posture intact).
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "8501:8501"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - PHOENIX_ENDPOINT=http://phoenix:6006
+      - PREFECT_API_URL=http://prefect:4200/api
+    volumes:
+      - ./app:/srv/app:ro
+      - ./logs:/srv/logs:ro

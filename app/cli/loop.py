@@ -21,11 +21,11 @@ import sys
 from prefect import flow
 
 from app.cli.promote import print_report, run_turn
-from app.config import get_settings
+from app.config import LOOP_DEPLOYMENT, LOOP_FLOW, get_settings
 from app.workflow.promotion_flow import PromotionReport
 
 
-@flow(name="continuous-evaluation", log_prints=True)
+@flow(name=LOOP_FLOW, log_prints=True)
 async def continuous_evaluation() -> PromotionReport:
     """One scheduled turn: eval champion vs challenger -> gate -> swap -> verify in store.
 
@@ -62,7 +62,7 @@ def main() -> int:
         f"continuous-evaluation loop: every {settings.loop_interval_seconds}s "
         f"(mode={settings.llm_mode}) — Ctrl-C to stop"
     )
-    continuous_evaluation.serve(name="every-interval", interval=settings.loop_interval_seconds)
+    continuous_evaluation.serve(name=LOOP_DEPLOYMENT, interval=settings.loop_interval_seconds)
     return 0
 
 
